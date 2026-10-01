@@ -2,3 +2,13 @@ build/bin
 node_modules
 frontend/dist
 .env
+FinalProject-Obsidian/.obsidian/workspace.json
+FinalProject-Obsidian/.obsidian/workspace-mobile.json
+database/*.db
+database/*.db-shm
+database/*.db-wal
+database/*.db-journal
+.tmp/
+/*.exe
+/.obsidian/
+/Untitled.canvas
