@@ -41,6 +41,10 @@ func main() {
 	settingService := service.NewSettingService(settingRepo)
 	settingController := controller.NewSettingController(settingService)
 
+	photoRepo := repository.NewPhotoRepository(db)
+	photoService := service.NewPhotoService(photoRepo)
+	photoController := controller.NewPhotoController(photoService)
+
 	app := NewApp()
 
 	err = wails.Run(&options.App{
@@ -55,6 +59,7 @@ func main() {
 		Bind: []interface{}{
 			app,
 			settingController,
+			photoController,
 		},
 	})
 

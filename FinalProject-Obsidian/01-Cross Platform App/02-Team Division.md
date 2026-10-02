@@ -61,12 +61,14 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] เปิด Native Directory Dialog สำหรับเลือก Source และ Destination
 - [x] บันทึกและโหลดค่า Source/Destination จาก SQLite ได้
 - [x] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
-- [ ] สร้าง PhotoService สำหรับสแกนเฉพาะไฟล์รูปจาก Source
-- [ ] ตรวจนามสกุลไฟล์รูปที่รองรับ เช่น JPG, JPEG, PNG, WEBP และ GIF
-- [ ] สร้าง PhotoController และเมธอด `ScanPhotos(source)`
-- [ ] Bind PhotoController เข้า Wails
-- [ ] สร้างหน้า Scan Photos และแสดงรายการรูปที่พบ
-- [ ] แสดง Preview และเลือกภาพที่จะส่งต่อไปขั้นตอน Move
+- [x] สร้าง `ScannedPhoto` DTO สำหรับส่งผลการสแกนไป Frontend
+- [x] สร้าง PhotoService สำหรับสแกนเฉพาะไฟล์รูปจาก Source และโฟลเดอร์ย่อย
+- [x] ตรวจนามสกุลไฟล์รูปที่รองรับ เช่น JPG, JPEG, PNG, WEBP และ GIF
+- [x] สร้าง PhotoController และเมธอด `ScanPhotos(source)`
+- [x] Bind PhotoController เข้า Wails และสร้าง Frontend Bindings
+- [x] สร้างหน้า Scan Photos และแสดงรายการรูปที่พบ
+- [x] เลือกภาพทีละรูปและเลือกทั้งหมดเพื่อส่งต่อไปขั้นตอน Move
+- [ ] แสดง Preview ภาพจริงในหน้า Scan Photos
 - [ ] เขียน Tests สำหรับการ Scan ด้วย Temporary Directory
 - [ ] กำหนด DTO และ IPC Contract ร่วมกับทีม
 - [ ] รวม Backend Modules ของสมาชิกทุกคนใน `main.go`
