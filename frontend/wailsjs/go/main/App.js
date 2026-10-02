@@ -5,3 +5,11 @@
 export function Greet(arg1) {
   return window['go']['main']['App']['Greet'](arg1);
 }
+
+export function SelectDestinationDirectory() {
+  return window['go']['main']['App']['SelectDestinationDirectory']();
+}
+
+export function SelectSourceDirectory() {
+  return window['go']['main']['App']['SelectSourceDirectory']();
+}

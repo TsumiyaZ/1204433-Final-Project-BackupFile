@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"FinalProject/model"
 	"FinalProject/model/query"
@@ -25,7 +26,17 @@ func NewSettingRepository(db *gorm.DB) SettingRepository {
 }
 
 func (r *settingRepository) GetSetting(ctx context.Context) (*model.Setting, error) {
-	return r.q.Setting.WithContext(ctx).Where(r.q.Setting.ID.Eq(1)).First()
+	setting, err := r.q.Setting.WithContext(ctx).Where(r.q.Setting.ID.Eq(1)).First()
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return &model.Setting{}, nil
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	return setting, nil
 }
 
 func (r *settingRepository) SaveSetting(ctx context.Context, setting *model.Setting) error {

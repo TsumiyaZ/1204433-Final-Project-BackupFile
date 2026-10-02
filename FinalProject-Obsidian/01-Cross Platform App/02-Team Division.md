@@ -28,16 +28,19 @@ Frontend → Controller → Service → Repository → SQLite
 - แต่ละ Feature ต้องมี Tests และอธิบาย Flow ของตัวเองใน Technical Demo ได้
 - ตกลง DTO และ Wails IPC Contract ก่อนเชื่อม Frontend
 
-## สมาชิก 1 — Setup, Settings และ Integration
+## สมาชิก 1 — Setup, Settings, Scan Photos และ Integration
 
-**Feature:** กำหนด Source/Destination และประกอบ Backend Modules
+**Feature:** กำหนด Source/Destination, สแกนรูปภาพจาก Source และประกอบ Backend Modules
 
 **พื้นที่รับผิดชอบ:**
 
 - `frontend/app/pages/setup.vue`
 - `controller/setting_controller.go`
+- `controller/photo_controller.go`
 - `service/setting_service.go`
+- `service/photo_service.go`
 - `repository/setting_repository.go`
+- `repository/photo_repository.go`
 - `model/`, `model/query/`
 - `repository/dbconnect.go`, `repository/migrate.go`
 - `main.go`, `app.go`, `go.mod`, `go.sum`
@@ -53,9 +56,18 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] สร้าง SettingController
 - [x] Bind SettingController เข้า Wails
 - [x] เขียน SettingService Test
-- [ ] เขียน SettingRepository Test และบันทึกไฟล์เข้าโปรเจกต์
-- [ ] สร้างหน้า Setup สำหรับเลือก Source/Destination
-- [ ] เชื่อมหน้า Setup กับ Wails Methods
+- [x] สร้างหน้า Setup สำหรับเลือก Source/Destination
+- [x] เชื่อมหน้า Setup กับ Wails Methods
+- [x] เปิด Native Directory Dialog สำหรับเลือก Source และ Destination
+- [x] บันทึกและโหลดค่า Source/Destination จาก SQLite ได้
+- [ ] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
+- [ ] สร้าง PhotoService สำหรับสแกนเฉพาะไฟล์รูปจาก Source
+- [ ] ตรวจนามสกุลไฟล์รูปที่รองรับ เช่น JPG, JPEG, PNG, WEBP และ GIF
+- [ ] สร้าง PhotoController และเมธอด `ScanPhotos(source)`
+- [ ] Bind PhotoController เข้า Wails
+- [ ] สร้างหน้า Scan Photos และแสดงรายการรูปที่พบ
+- [ ] แสดง Preview และเลือกภาพที่จะส่งต่อไปขั้นตอน Move
+- [ ] เขียน Tests สำหรับการ Scan ด้วย Temporary Directory
 - [ ] กำหนด DTO และ IPC Contract ร่วมกับทีม
 - [ ] รวม Backend Modules ของสมาชิกทุกคนใน `main.go`
 - [ ] Review Pull Requests ก่อนเข้า `develop`
@@ -67,13 +79,14 @@ GetSetting()
 SaveSetting(source, dest)
 SelectSourceDirectory()
 SelectDestinationDirectory()
+ScanPhotos(source)
 ```
 
-**งาน Demo:** อธิบาย Layered Architecture, SQLite, GORM, GORM Gen, Models, Relations, Dependency Injection และ Wails Bind
+**งาน Demo:** อธิบาย Layered Architecture, SQLite, GORM, GORM Gen, Models, Relations, Dependency Injection, Wails Bind และ Flow การ Scan รูปภาพ
 
-## สมาชิก 2 — Scan และ Move Photos
+## สมาชิก 2 — Move Photos
 
-**Feature:** สแกน เลือก และย้ายรูปจาก Source ไป Destination
+**Feature:** รับรายการรูปที่ผู้ใช้เลือก แล้วทำการย้ายจาก Source ไป Destination
 
 **พื้นที่รับผิดชอบ:**
 
@@ -86,9 +99,8 @@ SelectDestinationDirectory()
 **งาน:**
 
 - [ ] สร้างหน้า Move Photos
-- [ ] Scan เฉพาะไฟล์รูปจาก Source
 - [ ] ตรวจ Extension และ File Signature
-- [ ] แสดง Preview และเลือกรูปที่จะย้าย
+- [ ] รับรายการรูปที่เลือกมาจาก Feature Scan Photos
 - [ ] Move ด้วย Rename เมื่ออยู่ไดรฟ์เดียวกัน
 - [ ] Copy + Verify + Delete เมื่ออยู่คนละไดรฟ์
 - [ ] คำนวณ SHA-256 Checksum
@@ -101,7 +113,6 @@ SelectDestinationDirectory()
 **Wails Methods และ Events:**
 
 ```text
-ScanPhotos(source)
 MovePhotos(request)
 
 backup:progress
@@ -196,6 +207,7 @@ repository/
 ├── dbconnect.go
 ├── migrate.go
 ├── setting_repository.go
+├── photo_repository.go
 ├── backup_repository.go
 ├── gallery_repository.go
 └── analysis_repository.go
@@ -216,8 +228,8 @@ r.q.Tag
 |---|---|
 | Models, Migration, GORM Gen | สมาชิก 1 |
 | `main.go`, `app.go`, `go.mod`, `go.sum` | สมาชิก 1 |
-| Setup/Settings Feature | สมาชิก 1 |
-| Backup/Move Feature | สมาชิก 2 |
+| Setup/Settings และ Scan Photos Feature | สมาชิก 1 |
+| Move/Backup Feature | สมาชิก 2 |
 | Gallery/Delete/Integrity Feature | สมาชิก 3 |
 | AI/Search Feature | สมาชิก 4 |
 | IPC Contract และ DTO | ทุกคนตกลงร่วมกัน สมาชิก 1 เป็นผู้รวม |
@@ -228,6 +240,7 @@ r.q.Tag
 
 ```text
 feature/settings
+feature/scan-photos
 feature/backup-move
 feature/gallery-integrity
 feature/ai-search

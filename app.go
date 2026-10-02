@@ -3,11 +3,30 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct
 type App struct {
 	ctx context.Context
+}
+
+func (a *App) SelectSourceDirectory() (string, error) {
+	return runtime.OpenDirectoryDialog(
+		a.ctx,
+		runtime.OpenDialogOptions{
+			Title: "เลือกโฟลเดอร์ต้นทาง",
+		},
+	)
+}
+
+func (a *App) SelectDestinationDirectory() (string, error) {
+	return runtime.OpenDirectoryDialog(
+		a.ctx,
+		runtime.OpenDialogOptions{
+			Title: "เลือกโฟลเดอร์ปลายทาง",
+		},
+	)
 }
 
 // NewApp creates a new App application struct
