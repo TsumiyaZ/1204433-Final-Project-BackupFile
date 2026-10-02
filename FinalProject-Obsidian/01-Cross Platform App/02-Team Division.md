@@ -60,7 +60,7 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] เชื่อมหน้า Setup กับ Wails Methods
 - [x] เปิด Native Directory Dialog สำหรับเลือก Source และ Destination
 - [x] บันทึกและโหลดค่า Source/Destination จาก SQLite ได้
-- [ ] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
+- [x] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
 - [ ] สร้าง PhotoService สำหรับสแกนเฉพาะไฟล์รูปจาก Source
 - [ ] ตรวจนามสกุลไฟล์รูปที่รองรับ เช่น JPG, JPEG, PNG, WEBP และ GIF
 - [ ] สร้าง PhotoController และเมธอด `ScanPhotos(source)`
