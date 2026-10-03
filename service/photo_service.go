@@ -45,7 +45,7 @@ func (s *photoService) GetPhotoPreview(ctx context.Context, source string, path 
 
 	sourcePath, err := filepath.Abs(filepath.Clean(source))
 	if err != nil {
-		return "", fmt.Errorf("invalid source path: %w", err)
+		return "", fmt.Errorf("invalid folder path: %w", err)
 	}
 
 	photoPath, err := filepath.Abs(filepath.Clean(path))
@@ -61,7 +61,7 @@ func (s *photoService) GetPhotoPreview(ctx context.Context, source string, path 
 	if relativePath == ".." ||
 		strings.HasPrefix(relativePath, ".."+string(os.PathSeparator)) ||
 		filepath.IsAbs(relativePath) {
-		return "", fmt.Errorf("photo is outside source folder")
+		return "", fmt.Errorf("photo is outside selected folder")
 	}
 
 	if !isSupportedImage(photoPath) {
@@ -102,21 +102,21 @@ func (s *photoService) ScanPhotos(
 	source = strings.TrimSpace(source)
 
 	if source == "" {
-		return nil, fmt.Errorf("source folder is required")
+		return nil, fmt.Errorf("folder is required")
 	}
 
 	source, err := filepath.Abs(filepath.Clean(source))
 	if err != nil {
-		return nil, fmt.Errorf("cannot resolve source path: %w", err)
+		return nil, fmt.Errorf("cannot resolve folder path: %w", err)
 	}
 
 	sourceInfo, err := os.Stat(source)
 	if err != nil {
-		return nil, fmt.Errorf("cannot access source folder: %w", err)
+		return nil, fmt.Errorf("cannot access folder: %w", err)
 	}
 
 	if !sourceInfo.IsDir() {
-		return nil, fmt.Errorf("source path is not a folder")
+		return nil, fmt.Errorf("selected path is not a folder")
 	}
 
 	photos := make([]dto.ScannedPhoto, 0)
@@ -160,7 +160,7 @@ func (s *photoService) ScanPhotos(
 		},
 	)
 	if err != nil {
-		return nil, fmt.Errorf("cannot scan source folder: %w", err)
+		return nil, fmt.Errorf("cannot scan folder: %w", err)
 	}
 
 	sort.Slice(photos, func(i, j int) bool {

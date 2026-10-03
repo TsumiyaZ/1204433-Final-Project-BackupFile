@@ -57,7 +57,7 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] Bind SettingController เข้า Wails
 - [x] สร้างหน้า Setup สำหรับเลือก Source/Destination
 - [x] เชื่อมหน้า Setup กับ Wails Methods
-- [x] เปิด Native File Dialog ให้ Source แสดงเฉพาะไฟล์รูป และใช้ Directory Dialog สำหรับ Destination
+- [x] เปิด Native Directory Dialog สำหรับ Source และ Destination
 - [x] บันทึกและโหลดค่า Source/Destination จาก SQLite ได้
 - [x] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
 - [x] สร้าง `ScannedPhoto` DTO สำหรับส่งผลการสแกนไป Frontend
@@ -66,6 +66,7 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] สร้าง PhotoController และเมธอด `ScanPhotos(source)`
 - [x] Bind PhotoController เข้า Wails และสร้าง Frontend Bindings
 - [x] สร้างหน้า Scan Photos และแสดงรายการรูปที่พบ
+- [x] เพิ่มโหมด Scan Source และ Scan Destination ในหน้าเดียวกัน
 - [x] เลือกภาพทีละรูปและเลือกทั้งหมดเพื่อส่งต่อไปขั้นตอน Move
 - [x] สร้าง `GetPhotoPreview(source, path)` และแสดง Preview ภาพจริงในหน้า Scan Photos
 - [x] จำกัดขนาดไฟล์ Preview และตรวจว่าไฟล์อยู่ภายใน Source
