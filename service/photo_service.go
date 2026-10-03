@@ -11,6 +11,9 @@ import (
 
 	"FinalProject/dto"
 	"FinalProject/repository"
+
+	"encoding/base64"
+	"net/http"
 )
 
 type photoService struct {
@@ -22,6 +25,7 @@ type PhotoService interface {
 		ctx context.Context,
 		source string,
 	) ([]dto.ScannedPhoto, error)
+	GetPhotoPreview(ctx context.Context, source string, path string) (string, error)
 }
 
 func NewPhotoService(
@@ -30,6 +34,65 @@ func NewPhotoService(
 	return &photoService{
 		repo: repo,
 	}
+}
+
+func (s *photoService) GetPhotoPreview(ctx context.Context, source string, path string) (string, error) {
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	default:
+	}
+
+	sourcePath, err := filepath.Abs(filepath.Clean(source))
+	if err != nil {
+		return "", fmt.Errorf("invalid source path: %w", err)
+	}
+
+	photoPath, err := filepath.Abs(filepath.Clean(path))
+	if err != nil {
+		return "", fmt.Errorf("invalid photo path: %w", err)
+	}
+
+	relativePath, err := filepath.Rel(sourcePath, photoPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot validate photo path: %w", err)
+	}
+
+	if relativePath == ".." ||
+		strings.HasPrefix(relativePath, ".."+string(os.PathSeparator)) ||
+		filepath.IsAbs(relativePath) {
+		return "", fmt.Errorf("photo is outside source folder")
+	}
+
+	if !isSupportedImage(photoPath) {
+		return "", fmt.Errorf("unsupported image type")
+	}
+
+	info, err := os.Stat(photoPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot access photo: %w", err)
+	}
+
+	const maxPreviewSize = 20 * 1024 * 1024
+
+	if info.Size() > maxPreviewSize {
+		return "", fmt.Errorf("photo is too large for preview")
+	}
+
+	data, err := os.ReadFile(photoPath)
+	if err != nil {
+		return "", fmt.Errorf("cannot read photo: %w", err)
+	}
+
+	contentType := http.DetectContentType(data)
+
+	if !strings.HasPrefix(contentType, "image/") {
+		return "", fmt.Errorf("file content is not an image")
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(data)
+
+	return "data:" + contentType + ";base64," + encoded, nil
 }
 
 func (s *photoService) ScanPhotos(

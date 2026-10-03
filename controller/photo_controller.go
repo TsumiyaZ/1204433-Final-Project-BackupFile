@@ -27,3 +27,7 @@ func (c *PhotoController) ScanPhotos(
 		source,
 	)
 }
+
+func (c *PhotoController) GetPhotoPreview(source string, path string) (string, error) {
+	return c.service.GetPhotoPreview(context.Background(), source, path)
+}

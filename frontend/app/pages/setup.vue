@@ -1,54 +1,53 @@
 <template>
-  <main
-    data-theme="night"
-    class="min-h-[calc(100vh-4rem)] bg-base-200 px-6 py-10"
-  >
-    <button class="btn btn-primary">
-      <NuxtLink to="/">index</NuxtLink>
-    </button>
-    <section class="mx-auto max-w-3xl">
-      <div class="mb-8">
-        <p
-          class="mb-2 text-sm font-semibold uppercase tracking-wider text-primary"
+  <main class="min-h-[calc(100dvh-4rem)] bg-base-200/70 px-4 py-10 sm:px-6">
+    <section class="mx-auto max-w-4xl">
+      <header class="mb-8">
+        <span
+          class="inline-flex rounded-full border border-primary/20 bg-primary/8 px-4 py-2 text-sm font-semibold text-primary"
         >
-          Application setup
-        </p>
+          ตั้งค่าการสำรองรูป
+        </span>
 
-        <h1 class="text-3xl font-bold text-base-content">
-          กำหนดตำแหน่งจัดเก็บรูปภาพ
+        <h1 class="mt-5 text-3xl font-bold tracking-tight sm:text-4xl">
+          กำหนดโฟลเดอร์ต้นทางและปลายทาง
         </h1>
 
-        <p class="mt-3 max-w-2xl text-base leading-7 text-base-content/70">
-          เลือกโฟลเดอร์ต้นทางที่ต้องการสแกนรูป
-          และโฟลเดอร์ปลายทางสำหรับเก็บไฟล์ที่ Backup
+        <p class="mt-3 max-w-2xl text-base leading-7 text-base-content/65">
+          เลือกตำแหน่งที่ต้องการค้นหารูป และโฟลเดอร์สำหรับจัดเก็บไฟล์
+          โปรแกรมจะจดจำค่านี้ไว้สำหรับการใช้งานครั้งถัดไป
         </p>
-      </div>
+      </header>
 
       <form
-        class="card border border-base-300 bg-base-100 shadow-xl"
+        class="overflow-hidden rounded-[1.75rem] border border-base-300 bg-base-100 shadow-[0_20px_60px_rgba(91,64,48,0.10)]"
         @submit.prevent="saveSetting"
       >
-        <div class="card-body gap-7">
+        <div class="border-b border-base-300 bg-primary/5 px-6 py-5 sm:px-8">
+          <h2 class="text-lg font-bold">ตำแหน่งจัดเก็บ</h2>
+          <p class="mt-1 text-sm text-base-content/60">
+            Source และ Destination ต้องเป็นคนละโฟลเดอร์
+          </p>
+        </div>
+
+        <div class="space-y-8 p-6 sm:p-8">
           <div>
-            <label
-              for="source"
-              class="mb-2 block font-semibold text-base-content"
-            >
-              Source folder
-            </label>
+            <div class="mb-3 flex items-center justify-between gap-4">
+              <label for="source" class="font-bold">Source folder</label>
+              <span class="badge badge-outline border-primary/30 text-primary">ต้นทาง</span>
+            </div>
 
             <div class="flex flex-col gap-3 sm:flex-row">
               <input
                 id="source"
                 v-model="source"
-                class="input input-bordered min-h-12 w-full"
+                class="input input-bordered min-h-12 w-full bg-base-100 focus:border-primary focus:outline-primary"
                 placeholder="ยังไม่ได้เลือกโฟลเดอร์ต้นทาง"
                 readonly
               />
 
               <button
                 type="button"
-                class="btn btn-outline min-h-12 shrink-0"
+                class="btn btn-outline min-h-12 shrink-0 border-primary/40 text-primary hover:border-primary hover:bg-primary hover:text-primary-content"
                 :disabled="selecting !== null || loading"
                 @click="chooseSource"
               >
@@ -60,31 +59,33 @@
               </button>
             </div>
 
-            <p class="mt-2 text-sm text-base-content/60">
-              โปรแกรมจะค้นหาเฉพาะไฟล์รูปภาพจากโฟลเดอร์นี้
+            <p class="mt-2 text-sm leading-6 text-base-content/55">
+              โปรแกรมจะค้นหา JPG, JPEG, PNG, WEBP และ GIF จากโฟลเดอร์นี้
             </p>
           </div>
 
+          <div class="flex justify-center" aria-hidden="true">
+            <div class="h-px w-full bg-base-300" />
+          </div>
+
           <div>
-            <label
-              for="destination"
-              class="mb-2 block font-semibold text-base-content"
-            >
-              Destination folder
-            </label>
+            <div class="mb-3 flex items-center justify-between gap-4">
+              <label for="destination" class="font-bold">Destination folder</label>
+              <span class="badge badge-outline border-accent/40 text-accent">ปลายทาง</span>
+            </div>
 
             <div class="flex flex-col gap-3 sm:flex-row">
               <input
                 id="destination"
                 v-model="destination"
-                class="input input-bordered min-h-12 w-full"
+                class="input input-bordered min-h-12 w-full bg-base-100 focus:border-primary focus:outline-primary"
                 placeholder="ยังไม่ได้เลือกโฟลเดอร์ปลายทาง"
                 readonly
               />
 
               <button
                 type="button"
-                class="btn btn-outline min-h-12 shrink-0"
+                class="btn btn-outline min-h-12 shrink-0 border-primary/40 text-primary hover:border-primary hover:bg-primary hover:text-primary-content"
                 :disabled="selecting !== null || loading"
                 @click="chooseDestination"
               >
@@ -96,8 +97,8 @@
               </button>
             </div>
 
-            <p class="mt-2 text-sm text-base-content/60">
-              รูปที่เลือก Backup จะถูกย้ายมาเก็บในโฟลเดอร์นี้
+            <p class="mt-2 text-sm leading-6 text-base-content/55">
+              รูปที่เลือกจะถูกย้ายมาเก็บในโฟลเดอร์นี้
             </p>
           </div>
 
@@ -117,17 +118,23 @@
           >
             {{ successMessage }}
           </div>
+        </div>
 
-          <div class="card-actions justify-end border-t border-base-300 pt-6">
-            <button
-              type="submit"
-              class="btn btn-primary min-h-12 min-w-36"
-              :disabled="!canSave"
-            >
-              <span v-if="saving" class="loading loading-spinner loading-sm" />
-              {{ saving ? "กำลังบันทึก..." : "บันทึกการตั้งค่า" }}
-            </button>
-          </div>
+        <div
+          class="flex flex-col-reverse gap-3 border-t border-base-300 bg-base-200/60 px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8"
+        >
+          <NuxtLink to="/scan" class="btn btn-ghost min-h-12">
+            ไปหน้าสแกนรูป
+          </NuxtLink>
+
+          <button
+            type="submit"
+            class="btn btn-primary min-h-12 min-w-44"
+            :disabled="!canSave"
+          >
+            <span v-if="saving" class="loading loading-spinner loading-sm" />
+            {{ saving ? "กำลังบันทึก..." : "บันทึกการตั้งค่า" }}
+          </button>
         </div>
       </form>
     </section>

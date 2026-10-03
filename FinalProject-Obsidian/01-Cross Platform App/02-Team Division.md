@@ -55,10 +55,10 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] สร้าง SettingService และ Validation
 - [x] สร้าง SettingController
 - [x] Bind SettingController เข้า Wails
-- [x] เขียน SettingService Test
+- [ ] เขียน SettingService Test ใหม่ (ไฟล์ทดสอบเดิมถูกนำออกแล้ว)
 - [x] สร้างหน้า Setup สำหรับเลือก Source/Destination
 - [x] เชื่อมหน้า Setup กับ Wails Methods
-- [x] เปิด Native Directory Dialog สำหรับเลือก Source และ Destination
+- [x] เปิด Native File Dialog ให้ Source แสดงเฉพาะไฟล์รูป และใช้ Directory Dialog สำหรับ Destination
 - [x] บันทึกและโหลดค่า Source/Destination จาก SQLite ได้
 - [x] สร้าง PhotoRepository สำหรับจัดการข้อมูลรูปภาพ
 - [x] สร้าง `ScannedPhoto` DTO สำหรับส่งผลการสแกนไป Frontend
@@ -68,7 +68,10 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] Bind PhotoController เข้า Wails และสร้าง Frontend Bindings
 - [x] สร้างหน้า Scan Photos และแสดงรายการรูปที่พบ
 - [x] เลือกภาพทีละรูปและเลือกทั้งหมดเพื่อส่งต่อไปขั้นตอน Move
-- [ ] แสดง Preview ภาพจริงในหน้า Scan Photos
+- [x] สร้าง `GetPhotoPreview(source, path)` และแสดง Preview ภาพจริงในหน้า Scan Photos
+- [x] จำกัดขนาดไฟล์ Preview และตรวจว่าไฟล์อยู่ภายใน Source
+- [x] โหลด Preview พร้อมกันสูงสุด 4 รูปเพื่อไม่ให้หน้าจอค้าง
+- [x] ปรับ UI เป็นธีมครีม-ขาว พร้อม Navbar, Responsive Layout และสถานะการใช้งาน
 - [ ] เขียน Tests สำหรับการ Scan ด้วย Temporary Directory
 - [ ] กำหนด DTO และ IPC Contract ร่วมกับทีม
 - [ ] รวม Backend Modules ของสมาชิกทุกคนใน `main.go`
@@ -82,6 +85,7 @@ SaveSetting(source, dest)
 SelectSourceDirectory()
 SelectDestinationDirectory()
 ScanPhotos(source)
+GetPhotoPreview(source, path)
 ```
 
 **งาน Demo:** อธิบาย Layered Architecture, SQLite, GORM, GORM Gen, Models, Relations, Dependency Injection, Wails Bind และ Flow การ Scan รูปภาพ

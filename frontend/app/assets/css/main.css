@@ -1,2 +1,72 @@
 @import "tailwindcss";
 @plugin "daisyui";
+
+@plugin "daisyui/theme" {
+  name: "cream";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #fffdf8;
+  --color-base-200: #f8f1e6;
+  --color-base-300: #e8ddcd;
+  --color-base-content: #3f342f;
+
+  --color-primary: #9a5b43;
+  --color-primary-content: #fffaf2;
+  --color-secondary: #d19a4a;
+  --color-secondary-content: #352514;
+  --color-accent: #71866b;
+  --color-accent-content: #ffffff;
+  --color-neutral: #4a403b;
+  --color-neutral-content: #fffdf8;
+
+  --color-info: #4c78a8;
+  --color-info-content: #ffffff;
+  --color-success: #5f7f65;
+  --color-success-content: #ffffff;
+  --color-warning: #c57a22;
+  --color-warning-content: #2f1c08;
+  --color-error: #b64b43;
+  --color-error-content: #ffffff;
+
+  --radius-selector: 0.75rem;
+  --radius-field: 0.9rem;
+  --radius-box: 1.25rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@layer base {
+  html {
+    font-family: "Segoe UI", "Noto Sans Thai", sans-serif;
+    background: #f8f1e6;
+  }
+
+  body {
+    min-width: 320px;
+    min-height: 100vh;
+    color: #3f342f;
+    background: #f8f1e6;
+  }
+
+  button,
+  a,
+  input {
+    outline-color: #9a5b43;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
