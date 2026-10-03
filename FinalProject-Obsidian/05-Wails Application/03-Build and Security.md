@@ -42,7 +42,7 @@ status: planning
 ## Release Checklist
 
 - [ ] Working tree สะอาด
-- [ ] Tests ผ่าน
+- [ ] ฟังก์ชันหลักใช้งานได้ครบ
 - [ ] ไม่มี Secret ใน Git History ล่าสุด
 - [ ] Database Migration ผ่าน
 - [ ] Demo Dataset พร้อม

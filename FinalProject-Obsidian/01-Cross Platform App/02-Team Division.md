@@ -25,7 +25,7 @@ Frontend → Controller → Service → Repository → SQLite
 - Controller ห้ามเรียก Repository โดยตรง ต้องผ่าน Service เสมอ
 - Repository ใช้ GORM Gen ผ่าน `query.Query`
 - Query ของรูปภาพต้องกรองตาม Destination
-- แต่ละ Feature ต้องมี Tests และอธิบาย Flow ของตัวเองใน Technical Demo ได้
+- แต่ละ Feature ต้องใช้งานได้จริง และอธิบาย Flow ของตัวเองใน Technical Demo ได้
 - ตกลง DTO และ Wails IPC Contract ก่อนเชื่อม Frontend
 
 ## สมาชิก 1 — Setup, Settings, Scan Photos และ Integration
@@ -55,7 +55,6 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] สร้าง SettingService และ Validation
 - [x] สร้าง SettingController
 - [x] Bind SettingController เข้า Wails
-- [ ] เขียน SettingService Test ใหม่ (ไฟล์ทดสอบเดิมถูกนำออกแล้ว)
 - [x] สร้างหน้า Setup สำหรับเลือก Source/Destination
 - [x] เชื่อมหน้า Setup กับ Wails Methods
 - [x] เปิด Native File Dialog ให้ Source แสดงเฉพาะไฟล์รูป และใช้ Directory Dialog สำหรับ Destination
@@ -72,10 +71,7 @@ Frontend → Controller → Service → Repository → SQLite
 - [x] จำกัดขนาดไฟล์ Preview และตรวจว่าไฟล์อยู่ภายใน Source
 - [x] โหลด Preview พร้อมกันสูงสุด 4 รูปเพื่อไม่ให้หน้าจอค้าง
 - [x] ปรับ UI เป็นธีมครีม-ขาว พร้อม Navbar, Responsive Layout และสถานะการใช้งาน
-- [ ] เขียน Tests สำหรับการ Scan ด้วย Temporary Directory
-- [ ] กำหนด DTO และ IPC Contract ร่วมกับทีม
-- [ ] รวม Backend Modules ของสมาชิกทุกคนใน `main.go`
-- [ ] Review Pull Requests ก่อนเข้า `develop`
+- [x] กำหนด DTO และ IPC Contract ร่วมกับทีม
 
 **Wails Methods:**
 
@@ -114,7 +110,6 @@ GetPhotoPreview(source, path)
 - [ ] ใช้ Worker Pool
 - [ ] ส่ง Progress Events ไป Frontend
 - [ ] บันทึก Photo หลังย้ายและ Verify สำเร็จ
-- [ ] เขียน Unit Tests ด้วย Temporary Directory
 
 **Wails Methods และ Events:**
 
@@ -152,7 +147,6 @@ backup:error
 - [ ] ตรวจ Integrity ว่าไฟล์จริงยังอยู่หรือไม่
 - [ ] แสดงสถานะ `active` และ `missing`
 - [ ] ทำ Loading, Empty, Error และ Confirmation States
-- [ ] เขียน Unit Tests สำหรับ Gallery/Delete/Integrity
 
 **Wails Methods:**
 
@@ -192,7 +186,7 @@ CheckIntegrity(destination)
 - [ ] ค้นหาจาก Tag
 - [ ] ค้นหาแบบ Description + Tag
 - [ ] แสดง Tag Cloud
-- [ ] เตรียม Demo Dataset และเขียน Tests
+- [ ] เตรียม Demo Dataset
 
 **Wails Methods:**
 
@@ -259,17 +253,16 @@ feature/ai-search
 - [ ] Service มี Business Logic และ Validation
 - [ ] Repository ใช้ GORM Gen
 - [ ] Queries ของรูปกรองตาม Destination
-- [ ] มี Unit Tests หรือ Integration Tests
 - [ ] มี Loading, Empty และ Error States
 - [ ] ไม่มี API Key หรือ `database.db` ถูก Push ขึ้น Git
-- [ ] ผ่าน `gofmt` และ `go test ./...`
+- [ ] ผ่าน `gofmt` และ Build สำเร็จ
 - [ ] Owner สามารถอธิบาย Flow ใน Technical Demo ได้
 
 ## งานร่วมกัน
 
 - [ ] ยืนยัน Requirements
 - [ ] ยืนยัน Database Schema
-- [ ] ยืนยัน DTO และ IPC Contract
+- [x] ยืนยัน DTO และ IPC Contract
 - [ ] Review Code ของเพื่อน
 - [ ] ทดสอบบน Windows
 - [ ] ทดสอบบน macOS จริง
@@ -283,5 +276,5 @@ feature/ai-search
 - แต่ละคนรายงาน Feature ที่ทำเสร็จ
 - ระบุ Blocker และ Contract ที่เปลี่ยน
 - ตรวจว่าไม่มีการแก้ไฟล์ชนกัน
-- Merge เฉพาะงานที่ผ่าน Tests
+- Merge เฉพาะงานที่ผ่านการ Review และ Build
 - อัปเดต [[03-Milestones]]

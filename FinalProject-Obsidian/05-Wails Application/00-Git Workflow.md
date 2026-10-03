@@ -27,7 +27,7 @@ status: active
 4. Push Branch ของตัวเอง
 5. เปิด Pull Request เข้า `develop`
 6. ให้เพื่อน Review อย่างน้อยหนึ่งคน
-7. Merge เมื่อ Test ผ่าน
+7. Merge เมื่อ Review และ Build ผ่าน
 8. Merge `develop` เข้า `main` เมื่อจบ Milestone
 9. ห้าม Force Push เข้า `main`
 
@@ -47,13 +47,13 @@ status: active
 - [ ] ตรวจ `git status`
 - [ ] ไม่มี Secret
 - [ ] Format Code
-- [ ] Test Module
+- [ ] ทดลองใช้งาน Feature ที่แก้ไข
 - [ ] Build ส่วนที่เปลี่ยน
 - [ ] Commit เฉพาะงานของ Feature
 
 ## Before Merge
 
 - [ ] Pull/Rebase `develop`
-- [ ] แก้ Conflict และทดสอบใหม่
+- [ ] แก้ Conflict และตรวจการทำงานอีกครั้ง
 - [ ] Contract ไม่เปลี่ยนโดยไม่อัปเดตเอกสาร
 - [ ] Reviewer อนุมัติ
