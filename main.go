@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"embed"
 
 	"FinalProject/controller"
 	"FinalProject/repository"
 	"FinalProject/service"
+	"FinalProject/service/backup"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -45,6 +47,10 @@ func main() {
 	photoService := service.NewPhotoService(photoRepo)
 	photoController := controller.NewPhotoController(photoService)
 
+	backupRepo := repository.NewBackupRepository(db)
+	backupService := backup.NewBackupService(backupRepo, settingRepo)
+	backupController := controller.NewBackupController(backupService)
+
 	app := NewApp()
 
 	err = wails.Run(&options.App{
@@ -55,11 +61,15 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnStartup: func(ctx context.Context) {
+			app.startup(ctx)
+			controller.SetBackupContext(backupController, ctx)
+		},
 		Bind: []interface{}{
 			app,
 			settingController,
 			photoController,
+			backupController,
 		},
 	})
 
