@@ -90,14 +90,24 @@
             </p>
           </div>
 
-          <button
-            v-if="activeMode === 'source'"
-            type="button"
-            class="btn btn-outline min-h-12 border-primary/35 text-primary"
-            @click="toggleSelectAll"
-          >
-            {{ allSelected ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด" }}
-          </button>
+          <div v-if="activeMode === 'source'" class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              class="btn btn-outline min-h-12 border-primary/35 text-primary"
+              @click="toggleSelectAll"
+            >
+              {{ allSelected ? "ยกเลิกทั้งหมด" : "เลือกทั้งหมด" }}
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-primary min-h-12 px-6"
+              :disabled="selectedPaths.length === 0"
+              @click="goToMove"
+            >
+              ย้ายรูปที่เลือก
+            </button>
+          </div>
         </div>
 
         <ScanPhotoGrid
@@ -130,6 +140,7 @@ import ScanModeSelector from "../components/scan/ModeSelector.vue";
 import ScanPhotoGrid from "../components/scan/PhotoGrid.vue";
 import ScanToolbar from "../components/scan/ScanToolbar.vue";
 import { usePhotoScanner } from "../composables/usePhotoScanner";
+import { useSelectedPhotos } from "../composables/useSelectedPhotos";
 
 const {
   scanOptions,
@@ -151,4 +162,14 @@ const {
   scan,
   toggleSelectAll,
 } = usePhotoScanner();
+
+const { setSelection } = useSelectedPhotos();
+
+async function goToMove() {
+  const selected = new Set(selectedPaths.value);
+  const photos = currentPhotos.value.filter((photo) => selected.has(photo.path));
+
+  setSelection(photos, previewUrls.value);
+  await navigateTo("/move");
+}
 </script>

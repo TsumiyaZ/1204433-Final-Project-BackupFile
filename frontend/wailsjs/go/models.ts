@@ -1,5 +1,77 @@
 export namespace dto {
 	
+	export class MoveItemResult {
+	    sourcePath: string;
+	    filename: string;
+	    destinationPath: string;
+	    status: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new MoveItemResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.sourcePath = source["sourcePath"];
+	        this.filename = source["filename"];
+	        this.destinationPath = source["destinationPath"];
+	        this.status = source["status"];
+	        this.message = source["message"];
+	    }
+	}
+	export class MovePhotosRequest {
+	    paths: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new MovePhotosRequest(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.paths = source["paths"];
+	    }
+	}
+	export class MovePhotosResult {
+	    requested: number;
+	    moved: number;
+	    skipped: number;
+	    failed: number;
+	    durationMs: number;
+	    items: MoveItemResult[];
+	
+	    static createFrom(source: any = {}) {
+	        return new MovePhotosResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.requested = source["requested"];
+	        this.moved = source["moved"];
+	        this.skipped = source["skipped"];
+	        this.failed = source["failed"];
+	        this.durationMs = source["durationMs"];
+	        this.items = this.convertValues(source["items"], MoveItemResult);
+	    }
+	
+		convertValues(a: any, classs: any, asMap: boolean = false): any {
+		    if (!a) {
+		        return a;
+		    }
+		    if (a.slice && a.map) {
+		        return (a as any[]).map(elem => this.convertValues(elem, classs));
+		    } else if ("object" === typeof a) {
+		        if (asMap) {
+		            for (const key of Object.keys(a)) {
+		                a[key] = new classs(a[key]);
+		            }
+		            return a;
+		        }
+		        return new classs(a);
+		    }
+		    return a;
+		}
+	}
 	export class ScannedPhoto {
 	    filename: string;
 	    path: string;
