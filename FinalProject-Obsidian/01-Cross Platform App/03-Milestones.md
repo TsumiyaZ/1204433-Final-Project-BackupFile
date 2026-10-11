@@ -12,10 +12,10 @@ status: active
 
 ## Milestone 0 — Team Contract
 
-- [ ] ยืนยัน User Flow
-- [ ] ยืนยัน Database 4 ตาราง
-- [ ] ยืนยันชนิดรูปที่รองรับ
-- [ ] ยืนยัน [[04-Wails-Nuxt-IPC/00-IPC Contract|IPC Contract]]
+- [x] ยืนยัน User Flow
+- [x] ยืนยัน Database 4 ตาราง
+- [x] ยืนยันชนิดรูปที่รองรับ
+- [x] ยืนยัน [[04-Wails-Nuxt-IPC/00-IPC Contract|IPC Contract]]
 - [ ] เลือก AI Provider
 - [ ] เตรียมรูปทดสอบชุดเดียวกัน
 
@@ -28,13 +28,16 @@ status: active
 
 ## Milestone 2 — Backup MVP
 
-- [ ] Select Source/Destination
-- [ ] Scan และเลือกภาพ
-- [ ] Move Selected/All
-- [ ] Duplicate Protection
-- [ ] Database Records
-- [ ] Progress และเวลา
+- [x] Select Source/Destination
+- [x] Scan และเลือกภาพ
+- [x] Move Selected/All
+- [x] Duplicate Protection
+- [x] Database Records
+- [x] Progress และเวลา
 - [ ] Integrity Check
+
+> [!note]
+> ส่วนที่พัฒนาแล้วผ่าน `go test ./...` และ Nuxt Production Build แต่ยังต้องทดสอบ End-to-End บน Windows และ Flash Drive จริง
 
 > [!important]
 > Backup MVP ต้องเสร็จก่อนเพิ่ม AI ขั้นสูง เพราะเป็นฐานข้อมูลและไฟล์สำหรับทุก Feature หลังจากนี้

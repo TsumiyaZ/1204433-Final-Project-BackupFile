@@ -101,16 +101,18 @@ GetPhotoPreview(source, path)
 
 **งาน:**
 
-- [ ] สร้างหน้า Move Photos
-- [ ] ตรวจ Extension และ File Signature
-- [ ] รับรายการรูปที่เลือกมาจาก Feature Scan Photos
-- [ ] Move ด้วย Rename เมื่ออยู่ไดรฟ์เดียวกัน
-- [ ] Copy + Verify + Delete เมื่ออยู่คนละไดรฟ์
-- [ ] คำนวณ SHA-256 Checksum
-- [ ] ป้องกันไฟล์ซ้ำ
-- [ ] ใช้ Worker Pool
-- [ ] ส่ง Progress Events ไป Frontend
-- [ ] บันทึก Photo หลังย้ายและ Verify สำเร็จ
+- [x] สร้างหน้า Move Photos
+- [x] ตรวจ Extension และ File Signature
+- [x] รับรายการรูปที่เลือกมาจาก Feature Scan Photos
+- [x] Move ด้วย Rename เมื่ออยู่ไดรฟ์เดียวกัน
+- [x] Copy + Verify + Delete เมื่ออยู่คนละไดรฟ์
+- [x] คำนวณ SHA-256 Checksum
+- [x] ป้องกันไฟล์ซ้ำ
+- [x] ใช้ Worker Pool
+- [x] ส่ง Progress Events ไป Frontend
+- [x] บันทึก Photo หลังย้ายและ Verify สำเร็จ
+
+**สถานะล่าสุด:** Implementation ครบแล้ว และผ่าน `go test ./...` กับ Nuxt Production Build ส่วนการทดสอบย้ายรูปด้วย Flash Drive จริงยังอยู่ในงานร่วมกัน
 
 **Wails Methods และ Events:**
 
@@ -261,8 +263,8 @@ feature/ai-search
 
 ## งานร่วมกัน
 
-- [ ] ยืนยัน Requirements
-- [ ] ยืนยัน Database Schema
+- [x] ยืนยัน Requirements
+- [x] ยืนยัน Database Schema
 - [x] ยืนยัน DTO และ IPC Contract
 - [ ] Review Code ของเพื่อน
 - [ ] ทดสอบบน Windows
