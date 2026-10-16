@@ -45,17 +45,19 @@ status: active
 ## Milestone 3 — Gallery และ AI
 
 - [ ] Gallery จาก Database + Disk
-- [ ] Analyze Selected
-- [ ] Description และ Tags
+- [ ] เข้าคิว AI อัตโนมัติหลังแต่ละรูปย้ายและบันทึก DB สำเร็จ
+- [ ] AI สร้างและบันทึก Description จากไฟล์ใน Destination
 - [ ] Analysis Status
 - [ ] Retry
 
 ## Milestone 4 — Search
 
 - [ ] Description Search
-- [ ] Tag Search
-- [ ] Combined Search
-- [ ] Tag Cloud
+- [ ] ส่วนเสริม: Tag Search
+- [ ] ส่วนเสริม: Combined Search
+- [ ] ส่วนเสริม: Tag Cloud
+
+MVP ใช้การค้นข้อความใน SQLite ไม่ใช้ Vector Search และไม่นำเข้ารูปเดิมจาก Destination
 
 ## Milestone 5 — Cross-platform และ Demo
 

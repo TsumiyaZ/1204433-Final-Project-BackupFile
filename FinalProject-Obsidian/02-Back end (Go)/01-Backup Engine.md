@@ -56,6 +56,12 @@ flowchart TD
     DEL --> DB
 ```
 
+## การเชื่อม AI หลัง Move (Flow วันที่ 2026-10-16)
+
+หลังแต่ละรูปย้ายและบันทึก Photo สำเร็จ ให้ส่ง Photo ID เข้าคิว AI ทันที โดยใช้คิวแยกจาก Move Worker และอ่านไฟล์จาก Destination ตาม [[03-AI and Search]]
+
+Move ที่ skipped/failed หรือบันทึก DB ไม่สำเร็จไม่เริ่ม AI งาน AI ล้มเหลวไม่ย้อน Move และไม่ลบไฟล์ รูปเดิมใน Destination ไม่ถูกนำเข้าเพื่อวิเคราะห์
+
 ## Safety Rules
 
 - ห้ามลบ Source ก่อน Destination ผ่าน Verify

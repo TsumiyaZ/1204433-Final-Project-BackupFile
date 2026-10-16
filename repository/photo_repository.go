@@ -17,12 +17,17 @@ type PhotoRepository interface {
 	CreatePhoto(ctx context.Context, photo *model.Photo) error
 	GetPhotosByDestination(ctx context.Context, dest string) ([]*model.Photo, error)
 	PhotoExists(ctx context.Context, dest string, filename string) (bool, error)
+	GetPhotoByID(ctx context.Context, id uint, dest string) (*model.Photo, error)
 }
 
 func NewPhotoRepository(db *gorm.DB) PhotoRepository {
 	return &photoRepository{
 		q: query.Use(db),
 	}
+}
+
+func (r *photoRepository) GetPhotoByID(ctx context.Context, id uint, dest string) (*model.Photo, error) {
+	return r.q.Photo.WithContext(ctx).Where(r.q.Photo.ID.Eq(id), r.q.Photo.Dest.Eq(dest)).First()
 }
 
 func (r *photoRepository) CreatePhoto(ctx context.Context, photo *model.Photo) error {

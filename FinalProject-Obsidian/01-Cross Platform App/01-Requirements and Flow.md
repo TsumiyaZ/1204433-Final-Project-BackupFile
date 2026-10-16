@@ -34,10 +34,12 @@ flowchart TD
     F -->|ซ้ำ| G[Skip และแจ้งเหตุผล]
     F -->|ไม่ซ้ำ| H[Move หรือ Copy + Verify + Delete]
     H --> I[บันทึก Photo ใน Database]
-    I --> J[แสดงใน Gallery]
-    J --> K[เลือก Analyze]
-    K --> L[AI สร้าง Description และ Tags]
-    L --> M[Search และ Tag Cloud]
+    I --> J[แสดงใน Gallery พร้อมสถานะ pending]
+    I --> K[เข้าคิว AI อัตโนมัติทันทีต่อรูป]
+    K --> L[อ่านไฟล์จาก Destination และสร้าง Description]
+    L --> M[บันทึก Description และ completed]
+    M --> J
+    J --> N[ค้นข้อความใน Description ด้วย SQLite]
 ```
 
 ## Feature Requirements
@@ -68,24 +70,27 @@ flowchart TD
 ### Gallery และ Integrity
 
 - Gallery ใช้ Database เป็นรายการหลักและตรวจไฟล์จริงบน Disk
+- แสดงเฉพาะ Photo records ของ Destination ปัจจุบัน ไม่สแกนนำเข้ารูปเดิมที่ไม่มี record
+- แสดง Description และ Analysis Status พร้อมปุ่ม Retry สำหรับงาน AI ที่ล้มเหลว
 - Record มีแต่ไฟล์หาย ให้แสดง `missing`
 - ลบผ่านแอป ให้ลบไฟล์จริง พร้อมลบ Record ใน `photos` และ `photo_tags`
 - ไฟล์กลับมา ให้เปลี่ยนเป็น `active`
 
 ### AI
 
-- วิเคราะห์ได้ทั้งหนึ่งรูปและหลายรูป
+- หลังแต่ละรูปย้ายและบันทึก Photo สำเร็จ ให้ส่ง Photo ID เข้าคิว AI อัตโนมัติ ไม่รอทั้งชุดย้ายเสร็จ
+- ใช้คิว AI แยกจาก Worker ย้ายรูป เพื่อไม่ให้การเรียก AI ขวางการย้ายรูปถัดไป
+- วิเคราะห์เฉพาะรูปที่ย้ายผ่านโปรแกรมสำเร็จ รูปที่ skipped/failed และรูปเดิมใน Destination ไม่เข้าคิวใหม่
 - สถานะ `pending`, `processing`, `completed`, `failed`
-- บันทึก Description และ Tags
+- บันทึก Description เป็นผลลัพธ์หลัก; Tags เป็นส่วนเสริม
 - Retry ได้
 - AI ล้มเหลวต้องไม่กระทบไฟล์ที่ย้ายสำเร็จ
 
 ### Search
 
 - ค้น Description แบบข้อความบางส่วน
-- ค้นจากหนึ่งหรือหลาย Tags
-- ค้น Description + Tags พร้อมกัน
-- Tag Cloud แสดงขนาดตามจำนวนรูป
+- ใช้ SQLite สำหรับค้นข้อความ ไม่ใช้ Embedding หรือ Vector Database ใน MVP
+- ส่วนเสริม: ค้นจาก Tags, Description + Tags และ Tag Cloud
 
 ## Out of Scope สำหรับ MVP
 
@@ -95,5 +100,7 @@ flowchart TD
 - Video Analysis
 - HEIC Conversion
 - การแก้ไขรูปภาพ
+- สแกน Destination เพื่อนำไฟล์เดิมที่ไม่มี record เข้า Database หรือเข้าคิว AI
+- Vector Search
 
 โทรศัพท์ใน MVP ต้องมองเห็นเป็นโฟลเดอร์หรือเลือกโฟลเดอร์ DCIM ที่ระบบเข้าถึงได้

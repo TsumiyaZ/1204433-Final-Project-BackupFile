@@ -114,6 +114,12 @@ GetPhotoPreview(source, path)
 
 **สถานะล่าสุด:** Implementation ครบแล้ว และผ่าน `go test ./...` กับ Nuxt Production Build ส่วนการทดสอบย้ายรูปด้วย Flash Drive จริงยังอยู่ในงานร่วมกัน
 
+**งานเพิ่มตาม Flow วันที่ 2026-10-16 (ร่วมสมาชิก 4):**
+
+- [ ] ส่ง Photo ID เข้าคิว AI หลังแต่ละรูปย้ายและบันทึก DB สำเร็จ
+- [ ] ส่งเฉพาะรูปที่ย้ายสำเร็จ ไม่ส่งรูป skipped/failed และไม่รอจบทั้งชุด
+- [ ] แยกผล Move ออกจากผล AI; AI ล้มเหลวไม่เปลี่ยนผลย้ายที่สำเร็จ
+
 **Wails Methods และ Events:**
 
 ```text
@@ -142,6 +148,8 @@ backup:error
 
 - [ ] สร้างหน้า Gallery
 - [ ] แสดงรูปทั้งหมดของ Destination ปัจจุบัน
+- [ ] ใช้ Photo records ใน Database เป็นรายการหลัก ไม่สแกนนำเข้ารูปเดิมใน Destination
+- [ ] แสดง Description และ Analysis Status และรับ Event อัปเดตรูปตาม Photo ID
 - [ ] Preview และเลือกรูปหลายรูป
 - [ ] ทำ Destination-scoped queries
 - [ ] ลบไฟล์จริงและลบ Record ใน Database
@@ -163,7 +171,7 @@ CheckIntegrity(destination)
 
 ## สมาชิก 4 — AI Analysis และ Search
 
-**Feature:** วิเคราะห์รูป สร้าง Description/Tags และค้นหารูป
+**Feature:** วิเคราะห์รูปที่ย้ายสำเร็จอัตโนมัติ สร้าง Description และค้นข้อความด้วย SQLite; Tags/Tag Cloud เป็นส่วนเสริม
 
 **พื้นที่รับผิดชอบ:**
 
@@ -178,17 +186,19 @@ CheckIntegrity(destination)
 **งาน:**
 
 - [ ] เลือก AI Provider และกำหนด Analyzer Interface
-- [ ] สร้างหน้า AI Analysis และ Search
-- [ ] เลือกรูปจาก Destination เพื่อวิเคราะห์
-- [ ] ส่งรูปให้ AI และ Parse Description/Tags
+- [ ] สร้างคิว AI แยกจาก Worker ย้ายรูป และเชื่อมกับสมาชิก 2
+- [ ] รับ Photo ID หลังย้ายและบันทึก DB สำเร็จ แล้วอ่านรูปจาก Destination
+- [ ] ส่งรูปให้ AI และ Validate Description
+- [ ] แสดงผลและสถานะ AI ใน Gallery และทำหน้า Search
 - [ ] จัดการ Analysis Status
 - [ ] ทำ Retry และ Timeout
 - [ ] ป้องกันการวิเคราะห์ซ้ำ
-- [ ] บันทึก Description และ Tags ใน Transaction เดียว
+- [ ] บันทึก Description และสถานะ completed ให้สำเร็จใน Transaction เดียว
+- [ ] กู้คืนงาน pending/processing ที่ค้างหลังปิดแอป โดยตรวจ record และไฟล์ก่อนเข้าคิวใหม่
 - [ ] ค้นหาจาก Description
-- [ ] ค้นหาจาก Tag
-- [ ] ค้นหาแบบ Description + Tag
-- [ ] แสดง Tag Cloud
+- [ ] ส่วนเสริม: สร้าง Tags และบันทึกพร้อม Description ใน Transaction เดียว
+- [ ] ส่วนเสริม: ค้นหาจาก Tag และ Description + Tag
+- [ ] ส่วนเสริม: แสดง Tag Cloud
 - [ ] เตรียม Demo Dataset
 
 **Wails Methods:**
@@ -198,6 +208,8 @@ AnalyzePhoto(photoID, destination)
 SearchPhotos(request)
 GetTagCloud(destination)
 ```
+
+`AnalyzePhoto` ใช้สำหรับ Retry ของรูปที่อยู่ในระบบ ส่วนการเริ่มวิเคราะห์ครั้งแรกให้ Backend เข้าคิวอัตโนมัติหลัง Move ไม่ต้องกด Analyze ใน Frontend และ `GetTagCloud` เป็นส่วนเสริม
 
 **งาน Demo:** อธิบาย AI Request/Response, Transaction, Analysis Status, Tags, Search และ Error Handling
 

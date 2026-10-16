@@ -24,7 +24,7 @@ status: draft
 | `ScanSourceImages()` | Scan และคืนรายการรูป |
 | `MovePhotos(selectedPaths)` | ย้ายรูปที่เลือก |
 | `ListDestinationPhotos()` | อ่าน Gallery ตาม Destination |
-| `AnalyzePhotos(photoIDs)` | วิเคราะห์รูปที่เลือก |
+| `AnalyzePhotos(photoIDs)` | Retry งานวิเคราะห์ของ Photo records ที่มีอยู่ |
 | `SearchPhotos(text, tags)` | ค้น Description/Tags |
 | `GetTagCloud()` | คืน Tag และจำนวนรูป |
 | `RunIntegrityCheck()` | ตรวจ Database เทียบ Disk |
@@ -62,6 +62,11 @@ status: draft
 - Recoverable หรือไม่
 
 ## Contract Rules
+
+- Flow หลัก: แต่ละรูป Move สำเร็จ → บันทึก Photo → Backend เข้าคิว AI โดยอัตโนมัติ ไม่ต้องให้ Frontend เรียก Analyze
+- Gallery อ่าน records ตาม Destination; ไม่เพิ่ม records หรือวิเคราะห์ไฟล์เดิมด้วยการ Scan Destination
+- Description และการค้นข้อความใน SQLite เป็น MVP; Tags/Tag Cloud เป็นส่วนเสริม ไม่ใช้ Vector Search
+- ชื่อ Method ในตารางเป็นข้อเสนอ ส่วน Move ปัจจุบันคือ `MovePhotos(request)` ตาม DTO `MovePhotosRequest`
 
 - ห้ามส่ง raw database error ให้ผู้ใช้
 - Path validation ต้องอยู่ใน Backend

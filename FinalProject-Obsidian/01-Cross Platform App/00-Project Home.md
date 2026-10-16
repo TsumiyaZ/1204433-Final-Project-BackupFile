@@ -6,13 +6,13 @@ tags:
   - final-project
   - project-home
 status: planning
-updated: 2026-10-01
+updated: 2026-10-16
 ---
 
 # Final Project: Photo Transfer and AI Analysis
 
 > [!summary] Project Summary
-> แอป Desktop ด้วย Wails + Go + Nuxt สำหรับย้ายรูปจาก Flash Drive หรือโฟลเดอร์โทรศัพท์ไปยัง Destination จากนั้นใช้ AI สร้างคำอธิบายและ Tags เพื่อค้นหารูปและแสดง Tag Cloud
+> แอป Desktop ด้วย Wails + Go + Nuxt สำหรับย้ายรูปที่ผู้ใช้เลือกจาก Source ไป Destination เมื่อแต่ละรูปย้ายสำเร็จและบันทึก Photo แล้ว ให้เข้าคิว AI อัตโนมัติเพื่อสร้าง Description และค้นด้วยข้อความใน SQLite ส่วน Tags/Tag Cloud เป็นส่วนเสริม
 
 ## Project Navigation
 
@@ -53,10 +53,10 @@ updated: 2026-10-01
 - [ ] เลือกรูปบางส่วนหรือ Select All
 - [ ] ย้ายไฟล์แบบ Cut/Paste อย่างปลอดภัย
 - [ ] บันทึกข้อมูลด้วย SQLite และ GORM
-- [ ] แสดง Gallery จาก Destination
-- [ ] วิเคราะห์ Description และ Tags ด้วย AI
-- [ ] ค้นจาก Description และ Tags
-- [ ] แสดง Tag Cloud
+- [ ] แสดง Gallery จาก Photo records ของ Destination ปัจจุบัน
+- [ ] สร้าง Description ด้วย AI อัตโนมัติหลังย้ายแต่ละรูปสำเร็จ
+- [ ] ค้นจาก Description ด้วยข้อความใน SQLite
+- [ ] ส่วนเสริม: Tags, Tag Search และ Tag Cloud
 - [ ] ตรวจ Integrity ระหว่าง Database กับไฟล์จริง
 - [ ] ทำงานบน Windows และ macOS
 
@@ -84,9 +84,11 @@ flowchart LR
 เลือก Source/Destination
 → Scan และเลือกรูป
 → Move
-→ ดู Gallery
-→ Analyze
-→ Search/Tag Cloud
+→ แต่ละรูปย้ายสำเร็จและบันทึก DB → เข้าคิว AI อัตโนมัติ
+→ ดู Gallery พร้อมสถานะและ Description
+→ ค้นจาก Description
 ```
+
+AI อ่านไฟล์จาก Destination และทำงานขนานกับการย้ายรูปถัดไป รูปเดิมที่อยู่ใน Destination ไม่ถูกนำเข้า DB หรือวิเคราะห์อัตโนมัติ ไม่ใช้ Vector Search ใน MVP
 
 และต้องไม่มีกรณีลบไฟล์ต้นฉบับเมื่อ Copy หรือการตรวจสอบปลายทางล้มเหลว

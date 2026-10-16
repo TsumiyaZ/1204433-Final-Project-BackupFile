@@ -62,6 +62,7 @@ const navigation = [
   { label: "ตั้งค่า", to: "/setup" },
   { label: "สแกนรูป", to: "/scan" },
   { label: "ย้ายรูป", to: "/move" },
+  { label: "รูปภาพ", to: "/gallery"},
 ];
 
 function isActive(path: string) {

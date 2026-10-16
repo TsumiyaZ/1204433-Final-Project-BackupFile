@@ -1,5 +1,25 @@
 export namespace dto {
 	
+	export class GalleryPhoto {
+	    id: number;
+	    filename: string;
+	    description: string;
+	    status: string;
+	    analysisStatus: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new GalleryPhoto(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.filename = source["filename"];
+	        this.description = source["description"];
+	        this.status = source["status"];
+	        this.analysisStatus = source["analysisStatus"];
+	    }
+	}
 	export class MoveItemResult {
 	    sourcePath: string;
 	    filename: string;

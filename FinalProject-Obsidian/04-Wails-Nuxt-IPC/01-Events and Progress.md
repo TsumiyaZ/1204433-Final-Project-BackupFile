@@ -14,7 +14,7 @@ status: draft
 
 ### Move Progress
 
-- Event name: `move:progress`
+- Event name: `backup:progress`
 - Current index
 - Total
 - Filename
@@ -23,7 +23,7 @@ status: draft
 
 ### Move Completed
 
-- Event name: `move:completed`
+- Event name: `backup:completed`
 - Success/Skipped/Failed counts
 - Duration
 
@@ -31,6 +31,7 @@ status: draft
 
 - Event name: `analysis:progress`
 - Photo ID
+- Destination ของ record เพื่อกรอง Event ให้ตรง Gallery ที่กำลังเปิด
 - Filename
 - Status
 - Current/Total
@@ -42,6 +43,10 @@ status: draft
 - Missing count
 
 ## UI Behaviour
+
+- `backup:completed` หมายถึงจบการย้ายไฟล์ ไม่ได้หมายถึง AI วิเคราะห์ครบ
+- AI เริ่มต่อรูปหลัง Move และบันทึก DB สำเร็จ แสดงสถานะ AI แยกจาก Move
+- Gallery แสดง Description เมื่อสถานะ completed และมี Retry เมื่อ failed
 
 - Subscribe เมื่อ Page Mount
 - Unsubscribe เมื่อ Page Unmount

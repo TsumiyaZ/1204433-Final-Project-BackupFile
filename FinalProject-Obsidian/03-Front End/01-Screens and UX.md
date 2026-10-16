@@ -34,16 +34,16 @@ status: planning
 - Photo Grid จาก Database
 - Filter ตาม Analysis Status
 - Multi-select
-- Analyze Selected
-- Description และ Tag Chips
+- AI เริ่มอัตโนมัติหลังแต่ละรูปย้ายและบันทึก DB สำเร็จ
+- แสดง pending/processing/completed/failed แยกจากผล Move
+- Description เป็นข้อมูลหลัก; Tag Chips เป็นส่วนเสริม
 - Retry
 - Missing Status; เมื่อลบสำเร็จให้เอา Card ออกจาก Gallery
 
 ## Search Page
 
 - Description Input
-- Tag Filters
-- Tag Cloud
+- ส่วนเสริม: Tag Filters และ Tag Cloud
 - Search/Clear
 - Result Grid
 - Empty Result State

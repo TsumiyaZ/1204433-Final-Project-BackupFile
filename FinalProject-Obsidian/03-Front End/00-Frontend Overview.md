@@ -37,8 +37,10 @@ status: planning
 
 - ไม่มี Source → Disable Scan
 - ไม่มี Destination → Disable Move/Gallery
-- ไม่มี Selection → Disable Move/Analyze
+- ไม่มี Selection → Disable Move
 - กำลัง Move → Disable Path Change และ Move ซ้ำ
+- หลัง Move สำเร็จ → AI เข้าคิวอัตโนมัติ แสดง Progress ของ Move และ AI แยกกัน
+- Gallery อ่าน Photo records ตาม Destination ไม่สแกนนำเข้ารูปเดิม
 - กำลัง Analyze → แสดง Progress ต่อรูป
 - Missing File → แสดง Badge และไม่ส่งให้ AI
 - Failed Analysis → แสดง Retry

@@ -51,6 +51,9 @@ func main() {
 	backupService := backup.NewBackupService(backupRepo, settingRepo)
 	backupController := controller.NewBackupController(backupService)
 
+	galleryService := service.NewGalleryService(photoRepo, settingRepo, photoService)
+	galleryController := controller.NewGalleryController(galleryService)
+
 	app := NewApp()
 
 	err = wails.Run(&options.App{
@@ -70,6 +73,7 @@ func main() {
 			settingController,
 			photoController,
 			backupController,
+			galleryController,
 		},
 	})
 

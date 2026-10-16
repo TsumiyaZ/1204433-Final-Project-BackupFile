@@ -95,7 +95,9 @@ erDiagram
 - สร้าง Photo หลัง Move และ Verify สำเร็จ
 - Insert Tag ที่ยังไม่มี
 - เชื่อม `photo_tags` โดยไม่สร้างคู่ซ้ำ
-- Description และ Tags ควรบันทึกใน Transaction เดียว
+- MVP บันทึก Description และ `analysis_status = completed` ใน Transaction เดียว; ถ้าเพิ่ม Tags ให้บันทึกร่วมใน Transaction นี้
+- Photo ที่เพิ่ง Move สำเร็จเริ่มที่ `pending` และส่ง ID เข้าคิว AI หลังบันทึก DB สำเร็จเท่านั้น
+- ไม่สร้าง Photo records อัตโนมัติจากรูปเดิมใน Destination
 - Query ประวัติต้อง Filter ด้วย Destination
 - เมื่อลบผ่านแอป ให้ลบไฟล์จริงและลบ `photos`; ตั้ง Foreign Key Cascade เพื่อลบ `photo_tags` ตาม
 - ห้ามลบ `tags` ที่ยังมีรูปอื่นใช้งานอยู่
