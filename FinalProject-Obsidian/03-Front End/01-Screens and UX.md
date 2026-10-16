@@ -31,6 +31,8 @@ status: planning
 
 ## Gallery & AI Page
 
+สถานะ 2026-10-16: มีหน้า `/gallery` และเมนูรูปภาพแล้ว โหลดรายการชื่อรูป, Description และสถานะจาก DB ผ่าน `GetGalleryPhotos()` พร้อม Loading/Empty/Error ส่วน Preview จริง, AI Events และการเลือกรูปยังต้องทำต่อ
+
 - Photo Grid จาก Database
 - Filter ตาม Analysis Status
 - Multi-select

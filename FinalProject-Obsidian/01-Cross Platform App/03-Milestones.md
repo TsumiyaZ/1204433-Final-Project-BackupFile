@@ -44,7 +44,11 @@ status: active
 
 ## Milestone 3 — Gallery และ AI
 
-- [ ] Gallery จาก Database + Disk
+- [x] หน้า Gallery แสดงรายการจาก Database ตาม Destination พร้อม Description และสถานะ
+- [x] สร้าง GalleryPhoto DTO, Service, Controller และ Wails Bindings สำหรับรายการ
+- [x] เพิ่ม Repository ค้นรูปตาม ID + Destination และ Service โหลด Preview
+- [ ] เปิด Preview ผ่าน Controller/Bindings และแสดงภาพจริงใน Gallery
+- [ ] ตรวจไฟล์จริงบน Disk เพื่ออัปเดต active/missing
 - [ ] เข้าคิว AI อัตโนมัติหลังแต่ละรูปย้ายและบันทึก DB สำเร็จ
 - [ ] AI สร้างและบันทึก Description จากไฟล์ใน Destination
 - [ ] Analysis Status

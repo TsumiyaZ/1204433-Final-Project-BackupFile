@@ -141,28 +141,40 @@ backup:error
 - `frontend/app/pages/gallery.vue`
 - Components สำหรับ Gallery, Preview และ Confirmation Dialog
 - `controller/gallery_controller.go`
-- `service/gallery/`
-- `repository/gallery_repository.go`
+- `service/gallery_service.go`
+- `dto/gallery_photo.go`
+- `repository/photo_repository.go` (ใช้ query รูปร่วมกับสมาชิก 1)
 
 **งาน:**
 
-- [ ] สร้างหน้า Gallery
-- [ ] แสดงรูปทั้งหมดของ Destination ปัจจุบัน
-- [ ] ใช้ Photo records ใน Database เป็นรายการหลัก ไม่สแกนนำเข้ารูปเดิมใน Destination
-- [ ] แสดง Description และ Analysis Status และรับ Event อัปเดตรูปตาม Photo ID
+- [x] สร้างหน้า Gallery และเพิ่มเมนูรูปภาพใน Navbar
+- [x] สร้าง GalleryPhoto DTO, GalleryService และ GalleryController
+- [x] Bind GalleryController ใน main.go และสร้าง Wails Bindings
+- [x] แสดงรายการชื่อรูปจาก DB ของ Destination ปัจจุบัน
+- [x] ใช้ Photo records ใน Database เป็นรายการหลัก ไม่สแกนนำเข้ารูปเดิมใน Destination
+- [x] แสดง Description, Status และ Analysis Status ที่อ่านจาก DB
+- [ ] รับ Event อัปเดตสถานะ AI ตาม Photo ID
+- [x] เพิ่ม GetPhotoByID โดยกรอง ID และ Destination ใน PhotoRepository
+- [x] เพิ่ม GetGalleryPhotoPreview ใน Service โดยใช้ PhotoService อ่านไฟล์และแปลง Preview
+- [ ] เปิด GetGalleryPhotoPreview ผ่าน Controller และสร้าง Wails Bindings ใหม่
+- [ ] เชื่อม Frontend โหลด Preview ตาม Photo ID และแสดงภาพจริง
 - [ ] Preview และเลือกรูปหลายรูป
-- [ ] ทำ Destination-scoped queries
+- [x] ทำ Destination-scoped queries สำหรับรายการ Gallery และค้นรูปตาม ID
 - [ ] ลบไฟล์จริงและลบ Record ใน Database
 - [ ] ใช้ Transaction หรือกำหนด Rollback/Recovery ที่ชัดเจน
 - [ ] ใช้ Foreign Key Cascade ลบ PhotoTag
 - [ ] ตรวจ Integrity ว่าไฟล์จริงยังอยู่หรือไม่
-- [ ] แสดงสถานะ `active` และ `missing`
-- [ ] ทำ Loading, Empty, Error และ Confirmation States
+- [x] ทำ Loading, Empty และ Error States สำหรับโหลดรายการ Gallery
+- [ ] ตรวจไฟล์จริงและอัปเดตสถานะ `active` และ `missing`
+- [ ] ทำ Confirmation สำหรับลบรูป
+
+**สถานะล่าสุด (2026-10-16):** โหลดรายการจาก DB ขึ้นหน้า Gallery ได้แล้ว และ `go test ./...` ผ่านใน commit `8e940c0` ส่วน Preview มี method ใน Service แล้ว แต่ยังไม่เปิดผ่าน Controller หรือแสดงภาพใน Frontend; ยังไม่มี AI, Delete และ Integrity
 
 **Wails Methods:**
 
 ```text
-GetPhotos(destination)
+GetGalleryPhotos()                  // ใช้งานแล้ว
+GetGalleryPhotoPreview(photoID)      // มีใน Service; Controller/Frontend ยังไม่เชื่อม
 DeletePhotos(request)
 CheckIntegrity(destination)
 ```
@@ -215,7 +227,9 @@ GetTagCloud(destination)
 
 ## Repository แยกตาม Feature
 
-เพื่อให้ทุกคนได้ทำ Data Access และไม่แก้ไฟล์เดียวกันพร้อมกัน ให้แบ่ง Repository เป็น:
+แผนเดิมแยก Repository ตาม Feature; Gallery ปัจจุบันใช้ `photo_repository.go` ร่วมกัน และยังไม่ได้สร้าง `gallery_repository.go` หากจะแยกเมื่อเพิ่ม Delete/Integrity ให้ตกลงกับ Owner ก่อน
+
+โครงสร้างตามแผน:
 
 ```text
 repository/
