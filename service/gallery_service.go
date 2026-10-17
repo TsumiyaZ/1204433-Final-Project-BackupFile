@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"FinalProject/dto"
@@ -73,11 +74,36 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 	result := make([]dto.GalleryPhoto, 0, len(photos))
 
 	for _, photo := range photos {
+		path := filepath.Join(photo.Dest, photo.Filename)
+
+		status := "active"
+
+		info, err := os.Stat(path)
+
+		if os.IsNotExist(err) {
+			status = "missing"
+		} else if err != nil {
+			return nil, fmt.Errorf(
+				"cannot check photo %q: %w",
+				photo.Filename,
+				err,
+			)
+		} else if !info.Mode().IsRegular() {
+			status = "missing"
+		}
+
+		if photo.Status != status {
+			err := s.photoRepo.UpdatePhotoStatus(ctx, photo.ID, photo.Dest, status)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 		result = append(result, dto.GalleryPhoto{
 			ID:             photo.ID,
 			Filename:       photo.Filename,
 			Description:    photo.Description,
-			Status:         photo.Status,
+			Status:         status,
 			AnalysisStatus: photo.AnalysisStatus,
 		})
 	}
