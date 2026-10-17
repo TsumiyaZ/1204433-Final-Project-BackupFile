@@ -22,3 +22,7 @@ func NewGalleryController(
 func (c *GalleryController) GetGalleryPhotos() ([]dto.GalleryPhoto, error) {
 	return c.service.GetGalleryPhoto(context.Background())
 }
+
+func (c *GalleryController) GetGalleryPhotoPreview(photoID uint) (string, error) {
+	return c.service.GetGalleryPhotoPreview(context.Background(), photoID)
+}
