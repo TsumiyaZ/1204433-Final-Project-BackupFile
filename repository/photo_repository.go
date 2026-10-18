@@ -19,12 +19,18 @@ type PhotoRepository interface {
 	PhotoExists(ctx context.Context, dest string, filename string) (bool, error)
 	GetPhotoByID(ctx context.Context, id uint, dest string) (*model.Photo, error)
 	UpdatePhotoStatus(ctx context.Context, id uint, dest string, status string) error
+	DeletePhoto(ctx context.Context, id uint, dest string) error
 }
 
 func NewPhotoRepository(db *gorm.DB) PhotoRepository {
 	return &photoRepository{
 		q: query.Use(db),
 	}
+}
+
+func (r *photoRepository) DeletePhoto(ctx context.Context, id uint, dest string) error {
+	_, err := r.q.Photo.WithContext(ctx).Where(r.q.Photo.ID.Eq(id), r.q.Photo.Dest.Eq(dest)).Delete()
+	return err
 }
 
 func (r *photoRepository) UpdatePhotoStatus(ctx context.Context, id uint, dest string, status string) error {

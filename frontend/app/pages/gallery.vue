@@ -5,7 +5,7 @@
       <button
         type="button"
         class="btn btn-primary"
-        :disabled="loading"
+        :disabled="loading || deletingPhotoID !== null"
         @click="refreshPhoto"
       >
         {{ loading ? "กำลังโหลด..." : "รีเฟรชรูปภาพ" }}
@@ -50,7 +50,61 @@
         <p class="mt-3 text-base-content/70">
           {{ photo.description || "ยังไม่มีคำอธิบาย" }}
         </p>
+        <button
+          type="button"
+          class="btn btn-error mt-4"
+          :disabled="loading || deletingPhotoID != null"
+          @click="openDeleteDialog(photo)"
+        >
+          {{ deletingPhotoID === photo.id ? "กำลังลบ..." : "ลบรูป" }}
+        </button>
       </article>
+
+      <dialog
+        ref="deleteDialog"
+        class="modal"
+        aria-labelledby="delete-dialog-title"
+        @cancel="deletingPhotoID !== null && $event.preventDefault()"
+      >
+        <div class="modal-box bg-base-100">
+          <h2 id="delete-dialog-title" class="text-xl font-bold">
+            ยืนยันการลบรูปภาพ
+          </h2>
+
+          <p class="mt-4 break-all">
+            ต้องการลบ “{{ pendingDelete?.filename }}” หรือไม่?
+          </p>
+
+          <p class="mt-2 text-sm text-base-content/70">
+            ไฟล์จริงและข้อมูลในฐานข้อมูลจะถูกลบ
+            การลบนี้ไม่สามารถย้อนกลับผ่านแอปได้
+          </p>
+
+          <p v-if="errMessage" role="alert" class="mt-4 text-error">
+            {{ errMessage }}
+          </p>
+
+          <div class="modal-action">
+            <button
+              type="button"
+              class="btn"
+              :disabled="deletingPhotoID !== null"
+              @click="deleteDialog?.close()"
+            >
+              ยกเลิก
+            </button>
+
+            <button
+              type="button"
+              class="btn btn-error"
+              :disabled="deletingPhotoID !== null || !pendingDelete"
+              @click="pendingDelete && deletePhoto(pendingDelete)"
+            >
+              {{ deletingPhotoID !== null ? "กำลังลบ..." : "ยืนยันลบ" }}
+            </button>
+          </div>
+        </div>
+      </dialog>
     </div>
   </main>
 </template>
@@ -60,6 +114,7 @@ import { onMounted, ref } from "vue";
 import {
   GetGalleryPhotos,
   GetGalleryPhotoPreview,
+  DeleteGalleryPhoto,
 } from "../../wailsjs/go/controller/GalleryController";
 import type { dto } from "../../wailsjs/go/models";
 
@@ -67,6 +122,9 @@ const photos = ref<dto.GalleryPhoto[]>([]);
 const loading = ref(true);
 const errMessage = ref("");
 const previewUrls = ref<Record<number, string>>({});
+const deletingPhotoID = ref<number | null>(null);
+const deleteDialog = ref<HTMLDialogElement | null>(null);
+const pendingDelete = ref<dto.GalleryPhoto | null>(null);
 
 async function loadPhotos() {
   loading.value = true;
@@ -97,6 +155,36 @@ async function loadPreviews(items: dto.GalleryPhoto[]) {
       errMessage.value = `${photo.filename}: ${message}`;
       console.error("โหลด Preview ไม่สำเร็จ", photo.id, err);
     }
+  }
+}
+
+function openDeleteDialog(photo: dto.GalleryPhoto) {
+  pendingDelete.value = photo;
+  errMessage.value = "";
+  deleteDialog.value?.showModal();
+}
+
+async function deletePhoto(photo: dto.GalleryPhoto) {
+  if (loading.value || deletingPhotoID.value !== null) {
+    return;
+  }
+
+  deletingPhotoID.value = photo.id;
+  errMessage.value = "";
+
+  try {
+    await DeleteGalleryPhoto(photo.id);
+
+    photos.value = photos.value.filter((item) => item.id != photo.id);
+
+    delete previewUrls.value[photo.id];
+
+    deleteDialog.value?.close();
+    pendingDelete.value = null;
+  } catch (err) {
+    errMessage.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    deletingPhotoID.value = null;
   }
 }
 

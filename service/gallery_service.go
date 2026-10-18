@@ -19,6 +19,7 @@ type galleryService struct {
 type GalleryService interface {
 	GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhoto, error)
 	GetGalleryPhotoPreview(ctx context.Context, photoID uint) (string, error)
+	DeleteGalleryPhoto(ctx context.Context, photoID uint) error
 }
 
 func NewGalleryService(
@@ -31,6 +32,55 @@ func NewGalleryService(
 		settingRepo:  settingRepo,
 		photoService: photoService,
 	}
+}
+
+func (s *galleryService) DeleteGalleryPhoto(ctx context.Context, photoID uint) error {
+	setting, err := s.settingRepo.GetSetting(ctx)
+	if err != nil {
+		return err
+	}
+
+	if setting.Dest == "" {
+		return fmt.Errorf("Destination is not configured")
+	}
+
+	photo, err := s.photoRepo.GetPhotoByID(ctx, photoID, setting.Dest)
+	if err != nil {
+		return err
+	}
+
+	if photo.Filename == "" ||
+		photo.Filename == "." ||
+		photo.Filename == ".." ||
+		filepath.Base(photo.Filename) != photo.Filename {
+		return fmt.Errorf("invalid photo filename")
+	}
+
+	path := filepath.Join(photo.Dest, photo.Filename)
+
+	info, err := os.Lstat(path)
+
+	if os.IsNotExist(err) {
+	} else if err != nil {
+		return fmt.Errorf("cannot access photo: %w", err)
+	} else if !info.Mode().IsRegular() {
+		return fmt.Errorf("selected path is not a regular file")
+	}
+
+	err = os.Remove(path)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("cannot delete photo file: %w", err)
+	}
+
+	err = s.photoRepo.DeletePhoto(ctx, photo.ID, photo.Dest)
+	if err != nil {
+		return fmt.Errorf(
+			"file is absent but database deletion failed; retry deletion: %w",
+			err,
+		)
+	}
+
+	return nil
 }
 
 func (s *galleryService) GetGalleryPhotoPreview(

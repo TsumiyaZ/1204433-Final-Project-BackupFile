@@ -32,7 +32,10 @@ func NewDBConnection() (*gorm.DB, error) {
 		return nil, err
 	}
 
-	database, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	database, err := gorm.Open(
+		sqlite.Open(dbPath+"?_pragma=foreign_keys(1)"),
+		&gorm.Config{},
+	)
 	if err != nil {
 		return nil, err
 	}

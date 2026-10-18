@@ -26,3 +26,7 @@ func (c *GalleryController) GetGalleryPhotos() ([]dto.GalleryPhoto, error) {
 func (c *GalleryController) GetGalleryPhotoPreview(photoID uint) (string, error) {
 	return c.service.GetGalleryPhotoPreview(context.Background(), photoID)
 }
+
+func (c *GalleryController) DeleteGalleryPhoto(photoID uint) error {
+	return c.service.DeleteGalleryPhoto(context.Background(), photoID)
+}
