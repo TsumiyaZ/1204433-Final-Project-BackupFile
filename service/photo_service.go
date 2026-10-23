@@ -16,8 +16,12 @@ import (
 	"net/http"
 )
 
+const embeddingModelName = "embeddinggemma-2"
+const minimumSearchScore = 0.65
+
 type photoService struct {
-	repo repository.PhotoRepository
+	repo   repository.PhotoRepository
+	engine EmbeddingEngine
 }
 
 type PhotoService interface {
@@ -26,14 +30,102 @@ type PhotoService interface {
 		source string,
 	) ([]dto.ScannedPhoto, error)
 	GetPhotoPreview(ctx context.Context, source string, path string) (string, error)
+	GeneratePhotoEmbedding(ctx context.Context, photoID uint, dest string) error
+	SearchPhotos(ctx context.Context, dest string, text string) ([]dto.PhotoSearchResult, error)
 }
 
 func NewPhotoService(
 	repo repository.PhotoRepository,
+	engine EmbeddingEngine,
 ) PhotoService {
 	return &photoService{
-		repo: repo,
+		repo:   repo,
+		engine: engine,
 	}
+}
+
+func (s *photoService) SearchPhotos(
+	ctx context.Context,
+	dest string,
+	text string,
+) ([]dto.PhotoSearchResult, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return nil, fmt.Errorf("search text is required")
+	}
+
+	queryVector, err := s.engine.EmbedText(ctx, text)
+	if err != nil {
+		return nil, fmt.Errorf("cannot embed search text: %w", err)
+	}
+
+	photos, err := s.repo.GetPhotosWithEmbedding(ctx, dest)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get photos with embeddings: %w", err)
+	}
+
+	results := make([]dto.PhotoSearchResult, 0, len(photos))
+	for _, photo := range photos {
+		photoVector, err := decodeEmbedding(photo.Embedding)
+		if err != nil {
+			return nil, fmt.Errorf("cannot decode embedding for %q: %w", photo.Filename, err)
+		}
+
+		score, err := cosineSimilarity(queryVector, photoVector)
+		if err != nil {
+			return nil, fmt.Errorf("cannot compare embedding for %q: %w", photo.Filename, err)
+		}
+		if score < minimumSearchScore {
+			continue
+		}
+
+		results = append(results, dto.PhotoSearchResult{
+			ID:       photo.ID,
+			Filename: photo.Filename,
+			Score:    score,
+		})
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].Score > results[j].Score
+	})
+
+	return results, nil
+}
+
+func (s *photoService) GeneratePhotoEmbedding(
+	ctx context.Context,
+	photoID uint,
+	dest string,
+) error {
+	photo, err := s.repo.GetPhotoByID(ctx, photoID, dest)
+	if err != nil {
+		return fmt.Errorf("cannot find photo: %w", err)
+	}
+
+	imagePath := filepath.Join(photo.Dest, photo.Filename)
+
+	vector, err := s.engine.EmbedImage(ctx, imagePath)
+	if err != nil {
+		return fmt.Errorf("cannot create image embedding: %w", err)
+	}
+
+	embeddingBytes, err := encodeEmbedding(vector)
+	if err != nil {
+		return fmt.Errorf("cannot encode image embedding: %w", err)
+	}
+
+	if err := s.repo.UpdatePhotoEmbedding(
+		ctx,
+		photo.ID,
+		photo.Dest,
+		embeddingBytes,
+		embeddingModelName,
+	); err != nil {
+		return fmt.Errorf("cannot save image embedding: %w", err)
+	}
+
+	return nil
 }
 
 func (s *photoService) GetPhotoPreview(ctx context.Context, source string, path string) (string, error) {
@@ -64,7 +156,7 @@ func (s *photoService) GetPhotoPreview(ctx context.Context, source string, path 
 		return "", fmt.Errorf("photo is outside selected folder")
 	}
 
-	if !isSupportedImage(photoPath) {
+	if !isPreviewableImage(photoPath) {
 		return "", fmt.Errorf("unsupported image type")
 	}
 
@@ -134,7 +226,7 @@ func (s *photoService) ScanPhotos(
 			default:
 			}
 
-			if entry.IsDir() || !isSupportedImage(path) {
+			if entry.IsDir() || !isScannableImage(path) {
 				return nil
 			}
 
@@ -170,7 +262,18 @@ func (s *photoService) ScanPhotos(
 	return photos, nil
 }
 
-func isSupportedImage(path string) bool {
+func isScannableImage(path string) bool {
+	extension := strings.ToLower(filepath.Ext(path))
+
+	switch extension {
+	case ".jpg", ".jpeg", ".png":
+		return true
+	default:
+		return false
+	}
+}
+
+func isPreviewableImage(path string) bool {
 	extension := strings.ToLower(filepath.Ext(path))
 
 	switch extension {

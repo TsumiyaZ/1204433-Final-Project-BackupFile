@@ -10,7 +10,6 @@ export function usePhotoMover() {
   const { selectedPhotos, selectedPreviews, clearSelection } =
     useSelectedPhotos();
 
-  // Paths still chosen on this page; the user can untick before moving.
   const checkedPaths = ref<string[]>(
     selectedPhotos.value.map((photo) => photo.path),
   );

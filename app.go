@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -10,6 +11,14 @@ import (
 // App struct
 type App struct {
 	ctx context.Context
+
+	embeddingStatusMu sync.RWMutex
+	embeddingStatus   EmbeddingStatus
+}
+
+type EmbeddingStatus struct {
+	State   string `json:"state"`
+	Message string `json:"message"`
 }
 
 func (a *App) SelectSourceDirectory() (string, error) {
@@ -32,7 +41,27 @@ func (a *App) SelectDestinationDirectory() (string, error) {
 
 // NewApp creates a new App application struct
 func NewApp() *App {
-	return &App{}
+	return &App{
+		embeddingStatus: EmbeddingStatus{
+			State:   "loading",
+			Message: "กำลังเริ่มเตรียมโมเดลค้นหารูป...",
+		},
+	}
+}
+
+func (a *App) GetEmbeddingStatus() EmbeddingStatus {
+	a.embeddingStatusMu.RLock()
+	defer a.embeddingStatusMu.RUnlock()
+	return a.embeddingStatus
+}
+
+func (a *App) setEmbeddingStatus(state string, message string) {
+	a.embeddingStatusMu.Lock()
+	defer a.embeddingStatusMu.Unlock()
+	a.embeddingStatus = EmbeddingStatus{
+		State:   state,
+		Message: message,
+	}
 }
 
 // startup is called when the app starts. The context is saved

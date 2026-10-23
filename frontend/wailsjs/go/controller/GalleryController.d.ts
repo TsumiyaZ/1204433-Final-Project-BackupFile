@@ -4,6 +4,10 @@ import {dto} from '../models';
 
 export function DeleteGalleryPhoto(arg1:number):Promise<void>;
 
+export function GenerateGalleryPhotoEmbedding(arg1:number):Promise<void>;
+
 export function GetGalleryPhotoPreview(arg1:number):Promise<string>;
 
 export function GetGalleryPhotos():Promise<Array<dto.GalleryPhoto>>;
+
+export function SearchGalleryPhotos(arg1:string):Promise<Array<dto.PhotoSearchResult>>;

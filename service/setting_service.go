@@ -1,12 +1,14 @@
 package service
 
 import (
-	"FinalProject/model"
-	"FinalProject/repository"
 	"context"
 	"errors"
 	"path/filepath"
 	"strings"
+
+	"FinalProject/internal/pathutil"
+	"FinalProject/model"
+	"FinalProject/repository"
 )
 
 type settingService struct {
@@ -47,7 +49,7 @@ func (s *settingService) SaveSetting(ctx context.Context, setting *model.Setting
 	source = filepath.Clean(source)
 	dest = filepath.Clean(dest)
 
-	if strings.EqualFold(source, dest) {
+	if pathutil.Same(source, dest) {
 		return errors.New("source and destination must be different")
 	}
 

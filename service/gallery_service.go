@@ -19,7 +19,9 @@ type galleryService struct {
 type GalleryService interface {
 	GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhoto, error)
 	GetGalleryPhotoPreview(ctx context.Context, photoID uint) (string, error)
+	GenerateGalleryPhotoEmbedding(ctx context.Context, photoID uint) error
 	DeleteGalleryPhoto(ctx context.Context, photoID uint) error
+	SearchGalleryPhotos(ctx context.Context, text string) ([]dto.PhotoSearchResult, error)
 }
 
 func NewGalleryService(
@@ -32,6 +34,22 @@ func NewGalleryService(
 		settingRepo:  settingRepo,
 		photoService: photoService,
 	}
+}
+
+func (s *galleryService) SearchGalleryPhotos(
+	ctx context.Context,
+	text string,
+) ([]dto.PhotoSearchResult, error) {
+	setting, err := s.settingRepo.GetSetting(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if setting.Dest == "" {
+		return nil, fmt.Errorf("destination is not configured")
+	}
+
+	return s.photoService.SearchPhotos(ctx, setting.Dest, text)
 }
 
 func (s *galleryService) DeleteGalleryPhoto(ctx context.Context, photoID uint) error {
@@ -104,6 +122,22 @@ func (s *galleryService) GetGalleryPhotoPreview(
 	path := filepath.Join(photo.Dest, photo.Filename)
 
 	return s.photoService.GetPhotoPreview(ctx, setting.Dest, path)
+}
+
+func (s *galleryService) GenerateGalleryPhotoEmbedding(
+	ctx context.Context,
+	photoID uint,
+) error {
+	setting, err := s.settingRepo.GetSetting(ctx)
+	if err != nil {
+		return err
+	}
+
+	if setting.Dest == "" {
+		return fmt.Errorf("destination is not configured")
+	}
+
+	return s.photoService.GeneratePhotoEmbedding(ctx, photoID, setting.Dest)
 }
 
 func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhoto, error) {

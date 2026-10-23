@@ -66,7 +66,7 @@
           ไม่พบรูปภาพใน {{ currentFolderLabel }}
         </h2>
         <p class="mt-2 text-base-content/70">
-          รองรับไฟล์ JPG, JPEG, PNG, WEBP และ GIF
+          สำหรับสร้าง Embedding รองรับเฉพาะ JPG, JPEG และ PNG
         </p>
       </div>
 

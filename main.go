@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 
+	"FinalProject/ai/llama"
 	"FinalProject/controller"
 	"FinalProject/repository"
 	"FinalProject/service"
@@ -39,12 +40,14 @@ func main() {
 
 	println("Connected Database")
 
+	embeddingEngine := llama.NewClient("http://127.0.0.1:8080")
+
 	settingRepo := repository.NewSettingRepository(db)
 	settingService := service.NewSettingService(settingRepo)
 	settingController := controller.NewSettingController(settingService)
 
 	photoRepo := repository.NewPhotoRepository(db)
-	photoService := service.NewPhotoService(photoRepo)
+	photoService := service.NewPhotoService(photoRepo, embeddingEngine)
 	photoController := controller.NewPhotoController(photoService)
 
 	backupRepo := repository.NewBackupRepository(db)
@@ -66,6 +69,27 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
+			if err := llama.StartServer(ctx); err != nil {
+				app.setEmbeddingStatus(
+					"error",
+					"เปิดโมเดลไม่สำเร็จ ตรวจสอบตำแหน่ง llama-server แล้วเปิดแอปใหม่: "+err.Error(),
+				)
+				println("Embedding server error:", err.Error())
+			} else {
+				app.setEmbeddingStatus("loading", "กำลังตรวจสอบและเตรียมโมเดล อาจใช้เวลาสักครู่...")
+				go func() {
+					if err := embeddingEngine.WaitUntilReady(ctx); err != nil {
+						if ctx.Err() == nil {
+							app.setEmbeddingStatus(
+								"error",
+								"เตรียมโมเดลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต แล้วปิดและเปิดแอปใหม่: "+err.Error(),
+							)
+						}
+						return
+					}
+					app.setEmbeddingStatus("ready", "โมเดลพร้อมใช้งานแล้ว")
+				}()
+			}
 			controller.SetBackupContext(backupController, ctx)
 		},
 		Bind: []interface{}{

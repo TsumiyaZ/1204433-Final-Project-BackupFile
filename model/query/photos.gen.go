@@ -35,6 +35,8 @@ func newPhoto(db *gorm.DB, opts ...gen.DOOption) photo {
 	_photo.Description = field.NewString(tableName, "description")
 	_photo.Status = field.NewString(tableName, "status")
 	_photo.AnalysisStatus = field.NewString(tableName, "analysis_status")
+	_photo.Embedding = field.NewBytes(tableName, "embedding")
+	_photo.EmbeddingModel = field.NewString(tableName, "embedding_model")
 	_photo.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_photo.fillFieldMap()
@@ -53,6 +55,8 @@ type photo struct {
 	Description    field.String
 	Status         field.String
 	AnalysisStatus field.String
+	Embedding      field.Bytes
+	EmbeddingModel field.String
 	CreatedAt      field.Time
 
 	fieldMap map[string]field.Expr
@@ -77,6 +81,8 @@ func (p *photo) updateTableName(table string) *photo {
 	p.Description = field.NewString(table, "description")
 	p.Status = field.NewString(table, "status")
 	p.AnalysisStatus = field.NewString(table, "analysis_status")
+	p.Embedding = field.NewBytes(table, "embedding")
+	p.EmbeddingModel = field.NewString(table, "embedding_model")
 	p.CreatedAt = field.NewTime(table, "created_at")
 
 	p.fillFieldMap()
@@ -102,7 +108,7 @@ func (p *photo) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *photo) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 8)
+	p.fieldMap = make(map[string]field.Expr, 10)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["dest"] = p.Dest
 	p.fieldMap["filename"] = p.Filename
@@ -110,6 +116,8 @@ func (p *photo) fillFieldMap() {
 	p.fieldMap["description"] = p.Description
 	p.fieldMap["status"] = p.Status
 	p.fieldMap["analysis_status"] = p.AnalysisStatus
+	p.fieldMap["embedding"] = p.Embedding
+	p.fieldMap["embedding_model"] = p.EmbeddingModel
 	p.fieldMap["created_at"] = p.CreatedAt
 }
 

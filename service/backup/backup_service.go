@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"FinalProject/dto"
+	"FinalProject/internal/pathutil"
 	"FinalProject/repository"
 )
 
@@ -180,7 +181,7 @@ func (s *backupService) loadFolders(ctx context.Context) (string, string, error)
 		return "", "", fmt.Errorf("invalid destination folder: %w", err)
 	}
 
-	if strings.EqualFold(source, dest) {
+	if pathutil.Same(source, dest) {
 		return "", "", errors.New("source and destination must be different")
 	}
 
@@ -207,7 +208,7 @@ func uniquePaths(paths []string) []string {
 			continue
 		}
 
-		key := strings.ToLower(filepath.Clean(path))
+		key := pathutil.Key(path)
 		if seen[key] {
 			continue
 		}

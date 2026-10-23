@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"FinalProject/dto"
+	"FinalProject/internal/pathutil"
 	"FinalProject/model"
 	"FinalProject/repository"
 )
@@ -139,7 +140,7 @@ func (b *moveBatch) reserve(
 			candidate = fmt.Sprintf("%s (%d)%s", baseName, attempt, extension)
 		}
 
-		key := strings.ToLower(candidate)
+		key := pathutil.Key(candidate)
 		if b.filenames[key] {
 			continue
 		}
@@ -178,7 +179,7 @@ func (b *moveBatch) release(checksum string, filename string) {
 	defer b.mu.Unlock()
 
 	delete(b.checksums, checksum)
-	delete(b.filenames, strings.ToLower(filename))
+	delete(b.filenames, pathutil.Key(filename))
 }
 
 // transfer renames the file when possible and falls back to

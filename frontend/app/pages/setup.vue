@@ -60,7 +60,7 @@
             </div>
 
             <p class="mt-2 text-sm leading-6 text-base-content/55">
-              โปรแกรมจะค้นหา JPG, JPEG, PNG, WEBP และ GIF จากโฟลเดอร์นี้
+              โปรแกรมจะค้นหาเฉพาะ JPG, JPEG และ PNG ซึ่งรองรับการสร้าง Embedding
             </p>
           </div>
 

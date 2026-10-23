@@ -92,6 +92,22 @@ export namespace dto {
 		    return a;
 		}
 	}
+	export class PhotoSearchResult {
+	    id: number;
+	    filename: string;
+	    score: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new PhotoSearchResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.filename = source["filename"];
+	        this.score = source["score"];
+	    }
+	}
 	export class ScannedPhoto {
 	    filename: string;
 	    path: string;
@@ -110,6 +126,25 @@ export namespace dto {
 	        this.relativePath = source["relativePath"];
 	        this.extension = source["extension"];
 	        this.size = source["size"];
+	    }
+	}
+
+}
+
+export namespace main {
+	
+	export class EmbeddingStatus {
+	    state: string;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new EmbeddingStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.state = source["state"];
+	        this.message = source["message"];
 	    }
 	}
 

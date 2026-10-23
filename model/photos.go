@@ -2,6 +2,11 @@ package model
 
 import "time"
 
+const (
+	AnalysisStatusPending   = "pending"
+	AnalysisStatusCompleted = "completed"
+)
+
 type Photo struct {
 	ID             uint   `gorm:"primaryKey"`
 	Dest           string `gorm:"not null;uniqueIndex:idx_photo_dest_filename"`
@@ -10,5 +15,7 @@ type Photo struct {
 	Description    string `gorm:"type:text"`
 	Status         string `gorm:"not null;default:active;index"`
 	AnalysisStatus string `gorm:"not null;default:pending;index"`
+	Embedding      []byte `gorm:"type:blob"`
+	EmbeddingModel string
 	CreatedAt      time.Time
 }

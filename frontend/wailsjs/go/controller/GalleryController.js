@@ -6,10 +6,18 @@ export function DeleteGalleryPhoto(arg1) {
   return window['go']['controller']['GalleryController']['DeleteGalleryPhoto'](arg1);
 }
 
+export function GenerateGalleryPhotoEmbedding(arg1) {
+  return window['go']['controller']['GalleryController']['GenerateGalleryPhotoEmbedding'](arg1);
+}
+
 export function GetGalleryPhotoPreview(arg1) {
   return window['go']['controller']['GalleryController']['GetGalleryPhotoPreview'](arg1);
 }
 
 export function GetGalleryPhotos() {
   return window['go']['controller']['GalleryController']['GetGalleryPhotos']();
+}
+
+export function SearchGalleryPhotos(arg1) {
+  return window['go']['controller']['GalleryController']['SearchGalleryPhotos'](arg1);
 }
