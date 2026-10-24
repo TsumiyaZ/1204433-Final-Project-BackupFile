@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func getDatabasePath() (string, error) {
+func DatabasePath() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err
@@ -78,7 +78,7 @@ func copyDatabase(sourcePath string, destinationPath string) error {
 }
 
 func NewDBConnection() (*gorm.DB, error) {
-	dbPath, err := getDatabasePath()
+	dbPath, err := DatabasePath()
 	if err != nil {
 		return nil, err
 	}

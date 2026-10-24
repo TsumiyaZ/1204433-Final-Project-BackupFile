@@ -2,32 +2,32 @@
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "cream";
+  name: "photo-dark";
   default: true;
-  prefersdark: false;
-  color-scheme: light;
+  prefersdark: true;
+  color-scheme: dark;
 
-  --color-base-100: #fffdf8;
-  --color-base-200: #f8f1e6;
-  --color-base-300: #e8ddcd;
-  --color-base-content: #3f342f;
+  --color-base-100: #252629;
+  --color-base-200: #1d1e21;
+  --color-base-300: #383a3f;
+  --color-base-content: #f1f1f2;
 
-  --color-primary: #9a5b43;
-  --color-primary-content: #fffaf2;
-  --color-secondary: #d19a4a;
-  --color-secondary-content: #352514;
-  --color-accent: #71866b;
-  --color-accent-content: #ffffff;
-  --color-neutral: #4a403b;
-  --color-neutral-content: #fffdf8;
+  --color-primary: #1687f8;
+  --color-primary-content: #ffffff;
+  --color-secondary: #34363b;
+  --color-secondary-content: #f1f1f2;
+  --color-accent: #f69b38;
+  --color-accent-content: #20180f;
+  --color-neutral: #292a2e;
+  --color-neutral-content: #f1f1f2;
 
-  --color-info: #4c78a8;
+  --color-info: #65adff;
   --color-info-content: #ffffff;
-  --color-success: #5f7f65;
+  --color-success: #58b884;
   --color-success-content: #ffffff;
-  --color-warning: #c57a22;
-  --color-warning-content: #2f1c08;
-  --color-error: #b64b43;
+  --color-warning: #e9a34b;
+  --color-warning-content: #20180f;
+  --color-error: #ee7777;
   --color-error-content: #ffffff;
 
   --radius-selector: 0.75rem;
@@ -43,20 +43,20 @@
 @layer base {
   html {
     font-family: "Segoe UI", "Noto Sans Thai", sans-serif;
-    background: #f8f1e6;
+    background: #1d1e21;
   }
 
   body {
     min-width: 320px;
     min-height: 100vh;
-    color: #3f342f;
-    background: #f8f1e6;
+    color: #f1f1f2;
+    background: #1d1e21;
   }
 
   button,
   a,
   input {
-    outline-color: #9a5b43;
+    outline-color: #1687f8;
   }
 }
 

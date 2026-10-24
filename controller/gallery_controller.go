@@ -47,6 +47,14 @@ func (c *GalleryController) GetGalleryPhotoPreview(photoID uint) (string, error)
 	return c.service.GetGalleryPhotoPreview(context.Background(), photoID)
 }
 
+func (c *GalleryController) OpenGalleryPhoto(photoID uint) error {
+	return c.service.OpenGalleryPhoto(context.Background(), photoID)
+}
+
+func (c *GalleryController) ShowGalleryPhotoInFolder(photoID uint) error {
+	return c.service.ShowGalleryPhotoInFolder(context.Background(), photoID)
+}
+
 func (c *GalleryController) GenerateGalleryPhotoEmbedding(photoID uint) error {
 	return c.service.GenerateGalleryPhotoEmbedding(context.Background(), photoID)
 }

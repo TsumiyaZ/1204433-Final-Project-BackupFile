@@ -9,3 +9,7 @@ export function GetSetting() {
 export function SaveSetting(arg1, arg2) {
   return window['go']['controller']['SettingController']['SaveSetting'](arg1, arg2);
 }
+
+export function ShowDatabaseInFolder() {
+  return window['go']['controller']['SettingController']['ShowDatabaseInFolder']();
+}

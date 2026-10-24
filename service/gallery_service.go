@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"FinalProject/dto"
+	"FinalProject/internal/fileopener"
 	"FinalProject/model"
 	"FinalProject/repository"
 )
@@ -20,6 +22,8 @@ type galleryService struct {
 type GalleryService interface {
 	GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhoto, error)
 	GetGalleryPhotoPreview(ctx context.Context, photoID uint) (string, error)
+	OpenGalleryPhoto(ctx context.Context, photoID uint) error
+	ShowGalleryPhotoInFolder(ctx context.Context, photoID uint) error
 	GenerateGalleryPhotoEmbedding(ctx context.Context, photoID uint) error
 	DeleteGalleryPhoto(ctx context.Context, photoID uint) error
 	SearchGalleryPhotos(ctx context.Context, text string) ([]dto.PhotoSearchResult, error)
@@ -125,6 +129,53 @@ func (s *galleryService) GetGalleryPhotoPreview(
 	return s.photoService.GetPhotoPreview(ctx, setting.Dest, path)
 }
 
+func (s *galleryService) OpenGalleryPhoto(ctx context.Context, photoID uint) error {
+	path, err := s.getGalleryPhotoPath(ctx, photoID)
+	if err != nil {
+		return err
+	}
+	return fileopener.Open(path)
+}
+
+func (s *galleryService) ShowGalleryPhotoInFolder(ctx context.Context, photoID uint) error {
+	path, err := s.getGalleryPhotoPath(ctx, photoID)
+	if err != nil {
+		return err
+	}
+	return fileopener.Reveal(path)
+}
+
+func (s *galleryService) getGalleryPhotoPath(ctx context.Context, photoID uint) (string, error) {
+	setting, err := s.settingRepo.GetSetting(ctx)
+	if err != nil {
+		return "", err
+	}
+	if setting.Dest == "" {
+		return "", fmt.Errorf("destination is not configured")
+	}
+
+	photo, err := s.photoRepo.GetPhotoByID(ctx, photoID, setting.Dest)
+	if err != nil {
+		return "", err
+	}
+	if photo.Filename == "" || photo.Filename == "." || photo.Filename == ".." || filepath.Base(photo.Filename) != photo.Filename {
+		return "", fmt.Errorf("invalid photo filename")
+	}
+
+	path := filepath.Join(photo.Dest, photo.Filename)
+	info, err := os.Lstat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return "", fmt.Errorf("photo file no longer exists")
+		}
+		return "", fmt.Errorf("cannot access photo file: %w", err)
+	}
+	if !info.Mode().IsRegular() {
+		return "", fmt.Errorf("selected photo is not a regular file")
+	}
+	return filepath.Abs(path)
+}
+
 func (s *galleryService) GenerateGalleryPhotoEmbedding(
 	ctx context.Context,
 	photoID uint,
@@ -210,6 +261,9 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 		result = append(result, dto.GalleryPhoto{
 			ID:             photo.ID,
 			Filename:       photo.Filename,
+			Path:           path,
+			Size:           fileSize(info, status),
+			ModifiedAt:     fileModifiedAt(info, status),
 			Description:    photo.Description,
 			Status:         status,
 			AnalysisStatus: photo.AnalysisStatus,
@@ -219,4 +273,18 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 
 	return result, nil
 
+}
+
+func fileSize(info os.FileInfo, status string) int64 {
+	if status != "active" || info == nil {
+		return 0
+	}
+	return info.Size()
+}
+
+func fileModifiedAt(info os.FileInfo, status string) string {
+	if status != "active" || info == nil {
+		return ""
+	}
+	return info.ModTime().Format(time.RFC3339)
 }

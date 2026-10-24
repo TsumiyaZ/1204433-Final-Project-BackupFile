@@ -97,10 +97,19 @@ type imageInput struct {
 	Content []imageContent `json:"content"`
 }
 
-func StartServer(ctx context.Context) error {
+func StartServer(ctx context.Context, onStatus func(message string)) error {
 	executablePath, err := ResolveServerPath()
 	if err != nil {
-		return err
+		if strings.TrimSpace(os.Getenv("LLAMA_SERVER_PATH")) != "" {
+			return err
+		}
+		if onStatus != nil {
+			onStatus("ยังไม่พบ llama.cpp กำลังดาวน์โหลดส่วนประกอบที่จำเป็น...")
+		}
+		executablePath, err = installServer(ctx, onStatus)
+		if err != nil {
+			return fmt.Errorf("cannot prepare llama.cpp runtime: %w", err)
+		}
 	}
 
 	cmd := exec.CommandContext(
@@ -111,20 +120,54 @@ func StartServer(ctx context.Context) error {
 		"--host", "127.0.0.1",
 		"--port", "8080",
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	logFile := openServerLog()
+	if logFile != nil {
+		cmd.Stdout = logFile
+		cmd.Stderr = logFile
+	}
+	configureServerProcess(cmd)
 
 	if err := cmd.Start(); err != nil {
+		if logFile != nil {
+			logFile.Close()
+		}
 		return fmt.Errorf("cannot start llama server: %w", err)
 	}
 
 	go func() {
+		defer func() {
+			if logFile != nil {
+				logFile.Close()
+			}
+		}()
 		if err := cmd.Wait(); err != nil && ctx.Err() == nil {
-			fmt.Fprintln(os.Stderr, "llama server stopped:", err)
+			if logFile != nil {
+				fmt.Fprintf(logFile, "llama server stopped: %v\n", err)
+			}
 		}
 	}()
 
 	return nil
+}
+
+func openServerLog() *os.File {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil
+	}
+	logDir := filepath.Join(configDir, "PhotoBackup", "logs")
+	if err := os.MkdirAll(logDir, 0o755); err != nil {
+		return nil
+	}
+	logFile, err := os.OpenFile(
+		filepath.Join(logDir, "llama-server.log"),
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		0o600,
+	)
+	if err != nil {
+		return nil
+	}
+	return logFile
 }
 
 // ResolveServerPath finds llama-server using an explicit environment override,

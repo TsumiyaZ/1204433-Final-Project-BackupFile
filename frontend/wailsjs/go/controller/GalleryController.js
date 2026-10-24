@@ -22,6 +22,10 @@ export function IsEmbeddingQueuePaused() {
   return window['go']['controller']['GalleryController']['IsEmbeddingQueuePaused']();
 }
 
+export function OpenGalleryPhoto(arg1) {
+  return window['go']['controller']['GalleryController']['OpenGalleryPhoto'](arg1);
+}
+
 export function PauseEmbeddingQueue() {
   return window['go']['controller']['GalleryController']['PauseEmbeddingQueue']();
 }
@@ -32,4 +36,8 @@ export function ResumeEmbeddingQueue() {
 
 export function SearchGalleryPhotos(arg1) {
   return window['go']['controller']['GalleryController']['SearchGalleryPhotos'](arg1);
+}
+
+export function ShowGalleryPhotoInFolder(arg1) {
+  return window['go']['controller']['GalleryController']['ShowGalleryPhotoInFolder'](arg1);
 }

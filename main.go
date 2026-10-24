@@ -71,37 +71,40 @@ func main() {
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
-			if err := llama.StartServer(ctx); err != nil {
-				app.setEmbeddingStatus(
-					"error",
-					"เปิดโมเดลไม่สำเร็จ ตรวจสอบตำแหน่ง llama-server แล้วเปิดแอปใหม่: "+err.Error(),
-				)
-				println("Embedding server error:", err.Error())
-			} else {
+			controller.SetBackupContext(backupController, ctx)
+			app.setEmbeddingStatus("loading", "กำลังตรวจสอบส่วนประกอบสำหรับค้นหารูป...")
+			go func() {
+				if err := llama.StartServer(ctx, func(message string) {
+					app.setEmbeddingStatus("loading", message)
+				}); err != nil {
+					app.setEmbeddingStatus(
+						"error",
+						"เตรียม llama.cpp ไม่สำเร็จ: "+err.Error(),
+					)
+					return
+				}
+
 				app.setEmbeddingStatus("loading", "กำลังตรวจสอบและเตรียมโมเดล อาจใช้เวลาสักครู่...")
-				go func() {
-					if err := embeddingEngine.WaitUntilReady(ctx); err != nil {
-						if ctx.Err() == nil {
-							app.setEmbeddingStatus(
-								"error",
-								"เตรียมโมเดลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต แล้วปิดและเปิดแอปใหม่: "+err.Error(),
-							)
-						}
-						return
-					}
-					if err := embeddingQueue.Start(ctx, func(update service.EmbeddingStatusUpdate) {
-						runtime.EventsEmit(ctx, "embedding:status", update)
-					}); err != nil {
+				if err := embeddingEngine.WaitUntilReady(ctx); err != nil {
+					if ctx.Err() == nil {
 						app.setEmbeddingStatus(
 							"error",
-							"โมเดลพร้อมแล้ว แต่เริ่มคิววิเคราะห์รูปไม่สำเร็จ: "+err.Error(),
+							"เตรียมโมเดลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต แล้วเปิดแอปใหม่: "+err.Error(),
 						)
-						return
 					}
-					app.setEmbeddingStatus("ready", "โมเดลพร้อมใช้งานแล้ว")
-				}()
-			}
-			controller.SetBackupContext(backupController, ctx)
+					return
+				}
+				if err := embeddingQueue.Start(ctx, func(update service.EmbeddingStatusUpdate) {
+					runtime.EventsEmit(ctx, "embedding:status", update)
+				}); err != nil {
+					app.setEmbeddingStatus(
+						"error",
+						"โมเดลพร้อมแล้ว แต่เริ่มคิววิเคราะห์รูปไม่สำเร็จ: "+err.Error(),
+					)
+					return
+				}
+				app.setEmbeddingStatus("ready", "โมเดลพร้อมใช้งานแล้ว")
+			}()
 		},
 		Bind: []interface{}{
 			app,

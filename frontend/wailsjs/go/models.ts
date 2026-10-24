@@ -3,6 +3,9 @@ export namespace dto {
 	export class GalleryPhoto {
 	    id: number;
 	    filename: string;
+	    path: string;
+	    size: number;
+	    modifiedAt: string;
 	    description: string;
 	    status: string;
 	    analysisStatus: string;
@@ -16,6 +19,9 @@ export namespace dto {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.filename = source["filename"];
+	        this.path = source["path"];
+	        this.size = source["size"];
+	        this.modifiedAt = source["modifiedAt"];
 	        this.description = source["description"];
 	        this.status = source["status"];
 	        this.analysisStatus = source["analysisStatus"];

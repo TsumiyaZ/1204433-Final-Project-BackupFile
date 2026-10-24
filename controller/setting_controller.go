@@ -3,7 +3,9 @@ package controller
 import (
 	"context"
 
+	"FinalProject/internal/fileopener"
 	"FinalProject/model"
+	"FinalProject/repository"
 	"FinalProject/service"
 )
 
@@ -31,4 +33,12 @@ func (c *SettingController) SaveSetting(source string, dest string) error {
 		context.Background(),
 		setting,
 	)
+}
+
+func (c *SettingController) ShowDatabaseInFolder() error {
+	databasePath, err := repository.DatabasePath()
+	if err != nil {
+		return err
+	}
+	return fileopener.Reveal(databasePath)
 }
