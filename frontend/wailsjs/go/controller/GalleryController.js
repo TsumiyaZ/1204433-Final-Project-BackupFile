@@ -18,6 +18,18 @@ export function GetGalleryPhotos() {
   return window['go']['controller']['GalleryController']['GetGalleryPhotos']();
 }
 
+export function IsEmbeddingQueuePaused() {
+  return window['go']['controller']['GalleryController']['IsEmbeddingQueuePaused']();
+}
+
+export function PauseEmbeddingQueue() {
+  return window['go']['controller']['GalleryController']['PauseEmbeddingQueue']();
+}
+
+export function ResumeEmbeddingQueue() {
+  return window['go']['controller']['GalleryController']['ResumeEmbeddingQueue']();
+}
+
 export function SearchGalleryPhotos(arg1) {
   return window['go']['controller']['GalleryController']['SearchGalleryPhotos'](arg1);
 }

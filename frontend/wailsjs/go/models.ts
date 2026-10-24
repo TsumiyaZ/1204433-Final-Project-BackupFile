@@ -6,6 +6,7 @@ export namespace dto {
 	    description: string;
 	    status: string;
 	    analysisStatus: string;
+	    analysisError: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new GalleryPhoto(source);
@@ -18,6 +19,7 @@ export namespace dto {
 	        this.description = source["description"];
 	        this.status = source["status"];
 	        this.analysisStatus = source["analysisStatus"];
+	        this.analysisError = source["analysisError"];
 	    }
 	}
 	export class MoveItemResult {

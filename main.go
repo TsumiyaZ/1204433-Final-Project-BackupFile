@@ -13,9 +13,10 @@ import (
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
-//go:embed all:frontend/dist
+//go:embed all:frontend/.output/public
 var assets embed.FS
 
 func main() {
@@ -48,14 +49,15 @@ func main() {
 
 	photoRepo := repository.NewPhotoRepository(db)
 	photoService := service.NewPhotoService(photoRepo, embeddingEngine)
+	embeddingQueue := service.NewEmbeddingQueue(photoRepo, settingRepo, photoService)
 	photoController := controller.NewPhotoController(photoService)
 
 	backupRepo := repository.NewBackupRepository(db)
-	backupService := backup.NewBackupService(backupRepo, settingRepo)
+	backupService := backup.NewBackupService(backupRepo, settingRepo, embeddingQueue)
 	backupController := controller.NewBackupController(backupService)
 
 	galleryService := service.NewGalleryService(photoRepo, settingRepo, photoService)
-	galleryController := controller.NewGalleryController(galleryService)
+	galleryController := controller.NewGalleryController(galleryService, embeddingQueue)
 
 	app := NewApp()
 
@@ -85,6 +87,15 @@ func main() {
 								"เตรียมโมเดลไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต แล้วปิดและเปิดแอปใหม่: "+err.Error(),
 							)
 						}
+						return
+					}
+					if err := embeddingQueue.Start(ctx, func(update service.EmbeddingStatusUpdate) {
+						runtime.EventsEmit(ctx, "embedding:status", update)
+					}); err != nil {
+						app.setEmbeddingStatus(
+							"error",
+							"โมเดลพร้อมแล้ว แต่เริ่มคิววิเคราะห์รูปไม่สำเร็จ: "+err.Error(),
+						)
 						return
 					}
 					app.setEmbeddingStatus("ready", "โมเดลพร้อมใช้งานแล้ว")

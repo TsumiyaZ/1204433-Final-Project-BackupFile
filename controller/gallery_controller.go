@@ -8,15 +8,35 @@ import (
 )
 
 type GalleryController struct {
-	service service.GalleryService
+	service        service.GalleryService
+	embeddingQueue *service.EmbeddingQueue
 }
 
 func NewGalleryController(
 	service service.GalleryService,
+	queues ...*service.EmbeddingQueue,
 ) *GalleryController {
-	return &GalleryController{
-		service: service,
+	controller := &GalleryController{service: service}
+	if len(queues) > 0 {
+		controller.embeddingQueue = queues[0]
 	}
+	return controller
+}
+
+func (c *GalleryController) PauseEmbeddingQueue() {
+	if c.embeddingQueue != nil {
+		c.embeddingQueue.Pause()
+	}
+}
+
+func (c *GalleryController) ResumeEmbeddingQueue() {
+	if c.embeddingQueue != nil {
+		c.embeddingQueue.Resume()
+	}
+}
+
+func (c *GalleryController) IsEmbeddingQueuePaused() bool {
+	return c.embeddingQueue != nil && c.embeddingQueue.IsPaused()
 }
 
 func (c *GalleryController) GetGalleryPhotos() ([]dto.GalleryPhoto, error) {

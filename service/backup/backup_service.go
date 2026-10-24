@@ -21,6 +21,12 @@ const defaultWorkerCount = 4
 // It keeps the service independent from Wails events.
 type ProgressFunc func(progress dto.MoveProgress)
 
+// PhotoEmbeddingEnqueuer queues a photo after its file and database record
+// have been saved. The backup package does not depend on the embedding service.
+type PhotoEmbeddingEnqueuer interface {
+	Enqueue(photoID uint, dest string)
+}
+
 type BackupService interface {
 	MovePhotos(
 		ctx context.Context,
@@ -30,19 +36,27 @@ type BackupService interface {
 }
 
 type backupService struct {
-	repo        repository.BackupRepository
-	settingRepo repository.SettingRepository
-	workerCount int
+	repo           repository.BackupRepository
+	settingRepo    repository.SettingRepository
+	embeddingQueue PhotoEmbeddingEnqueuer
+	workerCount    int
 }
 
 func NewBackupService(
 	repo repository.BackupRepository,
 	settingRepo repository.SettingRepository,
+	embeddingQueues ...PhotoEmbeddingEnqueuer,
 ) BackupService {
+	var embeddingQueue PhotoEmbeddingEnqueuer
+	if len(embeddingQueues) > 0 {
+		embeddingQueue = embeddingQueues[0]
+	}
+
 	return &backupService{
-		repo:        repo,
-		settingRepo: settingRepo,
-		workerCount: defaultWorkerCount,
+		repo:           repo,
+		settingRepo:    settingRepo,
+		embeddingQueue: embeddingQueue,
+		workerCount:    defaultWorkerCount,
 	}
 }
 
@@ -74,11 +88,12 @@ func (s *backupService) MovePhotos(
 	}
 
 	batch := &moveBatch{
-		repo:      s.repo,
-		source:    source,
-		dest:      dest,
-		checksums: make(map[string]bool),
-		filenames: make(map[string]bool),
+		repo:           s.repo,
+		source:         source,
+		dest:           dest,
+		embeddingQueue: s.embeddingQueue,
+		checksums:      make(map[string]bool),
+		filenames:      make(map[string]bool),
 	}
 
 	jobs := make(chan moveJob)

@@ -38,6 +38,7 @@ func newPhoto(db *gorm.DB, opts ...gen.DOOption) photo {
 	_photo.Embedding = field.NewBytes(tableName, "embedding")
 	_photo.EmbeddingModel = field.NewString(tableName, "embedding_model")
 	_photo.CreatedAt = field.NewTime(tableName, "created_at")
+	_photo.AnalysisError = field.NewString(tableName, "analysis_error")
 
 	_photo.fillFieldMap()
 
@@ -58,6 +59,7 @@ type photo struct {
 	Embedding      field.Bytes
 	EmbeddingModel field.String
 	CreatedAt      field.Time
+	AnalysisError  field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -84,6 +86,7 @@ func (p *photo) updateTableName(table string) *photo {
 	p.Embedding = field.NewBytes(table, "embedding")
 	p.EmbeddingModel = field.NewString(table, "embedding_model")
 	p.CreatedAt = field.NewTime(table, "created_at")
+	p.AnalysisError = field.NewString(table, "analysis_error")
 
 	p.fillFieldMap()
 
@@ -108,7 +111,7 @@ func (p *photo) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (p *photo) fillFieldMap() {
-	p.fieldMap = make(map[string]field.Expr, 10)
+	p.fieldMap = make(map[string]field.Expr, 11)
 	p.fieldMap["id"] = p.ID
 	p.fieldMap["dest"] = p.Dest
 	p.fieldMap["filename"] = p.Filename
@@ -119,6 +122,7 @@ func (p *photo) fillFieldMap() {
 	p.fieldMap["embedding"] = p.Embedding
 	p.fieldMap["embedding_model"] = p.EmbeddingModel
 	p.fieldMap["created_at"] = p.CreatedAt
+	p.fieldMap["analysis_error"] = p.AnalysisError
 }
 
 func (p photo) clone(db *gorm.DB) photo {

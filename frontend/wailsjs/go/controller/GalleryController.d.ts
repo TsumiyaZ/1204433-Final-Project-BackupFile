@@ -10,4 +10,10 @@ export function GetGalleryPhotoPreview(arg1:number):Promise<string>;
 
 export function GetGalleryPhotos():Promise<Array<dto.GalleryPhoto>>;
 
+export function IsEmbeddingQueuePaused():Promise<boolean>;
+
+export function PauseEmbeddingQueue():Promise<void>;
+
+export function ResumeEmbeddingQueue():Promise<void>;
+
 export function SearchGalleryPhotos(arg1:string):Promise<Array<dto.PhotoSearchResult>>;

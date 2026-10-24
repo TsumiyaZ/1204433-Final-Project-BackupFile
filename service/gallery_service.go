@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"FinalProject/dto"
+	"FinalProject/model"
 	"FinalProject/repository"
 )
 
@@ -137,7 +138,30 @@ func (s *galleryService) GenerateGalleryPhotoEmbedding(
 		return fmt.Errorf("destination is not configured")
 	}
 
-	return s.photoService.GeneratePhotoEmbedding(ctx, photoID, setting.Dest)
+	if err := s.photoRepo.UpdatePhotoAnalysisStatus(
+		ctx,
+		photoID,
+		setting.Dest,
+		model.AnalysisStatusProcessing,
+		"",
+	); err != nil {
+		return fmt.Errorf("cannot mark photo as processing: %w", err)
+	}
+
+	if err := s.photoService.GeneratePhotoEmbedding(ctx, photoID, setting.Dest); err != nil {
+		if updateErr := s.photoRepo.UpdatePhotoAnalysisStatus(
+			ctx,
+			photoID,
+			setting.Dest,
+			model.AnalysisStatusFailed,
+			err.Error(),
+		); updateErr != nil {
+			return fmt.Errorf("%w; cannot save failed status: %v", err, updateErr)
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhoto, error) {
@@ -189,6 +213,7 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 			Description:    photo.Description,
 			Status:         status,
 			AnalysisStatus: photo.AnalysisStatus,
+			AnalysisError:  photo.AnalysisError,
 		})
 	}
 

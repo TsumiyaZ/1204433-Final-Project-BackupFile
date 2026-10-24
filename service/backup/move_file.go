@@ -17,9 +17,10 @@ import (
 
 // moveBatch holds state shared by all workers of one MovePhotos call.
 type moveBatch struct {
-	repo   repository.BackupRepository
-	source string
-	dest   string
+	repo           repository.BackupRepository
+	source         string
+	dest           string
+	embeddingQueue PhotoEmbeddingEnqueuer
 
 	// mu guards the reservations below so two workers never pick the same
 	// destination name or move two copies of the same content.
@@ -101,6 +102,9 @@ func (b *moveBatch) moveOne(ctx context.Context, rawPath string) dto.MoveItemRes
 		// integrity check can reconcile the missing record later.
 		item.Message = "photo moved but saving the record failed"
 		return item
+	}
+	if b.embeddingQueue != nil {
+		b.embeddingQueue.Enqueue(photo.ID, photo.Dest)
 	}
 
 	item.Status = dto.MoveStatusMoved

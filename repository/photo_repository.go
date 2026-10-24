@@ -22,12 +22,40 @@ type PhotoRepository interface {
 	DeletePhoto(ctx context.Context, id uint, dest string) error
 	UpdatePhotoEmbedding(ctx context.Context, id uint, dest string, embedding []byte, modelName string) error
 	GetPhotosWithEmbedding(ctx context.Context, dest string) ([]*model.Photo, error)
+	UpdatePhotoAnalysisStatus(
+		ctx context.Context,
+		id uint,
+		dest string,
+		status string,
+		message string,
+	) error
 }
 
 func NewPhotoRepository(db *gorm.DB) PhotoRepository {
 	return &photoRepository{
 		q: query.Use(db),
 	}
+}
+
+func (r *photoRepository) UpdatePhotoAnalysisStatus(
+	ctx context.Context,
+	id uint,
+	dest string,
+	status string,
+	message string,
+) error {
+	_, err := r.q.Photo.
+		WithContext(ctx).
+		Where(
+			r.q.Photo.ID.Eq(id),
+			r.q.Photo.Dest.Eq(dest),
+		).
+		UpdateSimple(
+			r.q.Photo.AnalysisStatus.Value(status),
+			r.q.Photo.AnalysisError.Value(""),
+		)
+
+	return err
 }
 
 func (r *photoRepository) GetPhotosWithEmbedding(
@@ -62,6 +90,7 @@ func (r *photoRepository) UpdatePhotoEmbedding(
 			r.q.Photo.Embedding.Value(embedding),
 			r.q.Photo.EmbeddingModel.Value(modelName),
 			r.q.Photo.AnalysisStatus.Value(model.AnalysisStatusCompleted),
+			r.q.Photo.AnalysisError.Value(""),
 		)
 
 	return err

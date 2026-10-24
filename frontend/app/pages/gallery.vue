@@ -10,7 +10,7 @@
           type="button"
           class="btn btn-outline refresh-button"
           aria-label="รีเฟรชรูปภาพ"
-          :disabled="loading || deletingPhotoID !== null || deletingAllPhotos || batchEmbedding"
+          :disabled="loading || deletingPhotoID !== null || deletingAllPhotos"
           @click="refreshPhoto"
         >
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="h-5 w-5">
@@ -20,7 +20,7 @@
         </button>
       </div>
 
-      <form class="search-shell" role="search" @submit.prevent="searchGallery">
+      <form class="search-shell" role="search" @submit.prevent>
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="search-icon">
           <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2" />
           <path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
@@ -32,72 +32,41 @@
           type="search"
           autocomplete="off"
           placeholder="ค้นหารูปภาพ เช่น เรือกลางทะเล หรือ หมา"
-          :disabled="batchEmbedding"
         />
         <button v-if="searchText" type="button" class="clear-search" aria-label="ล้างคำค้นหา" @click="clearSearch">
           <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" class="h-5 w-5">
             <path d="m6 6 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>
         </button>
-        <button class="btn btn-primary search-submit" type="submit" :disabled="searching || batchEmbedding">
-          {{ searching ? "กำลังค้นหา..." : "ค้นหา" }}
-        </button>
       </form>
+      <p v-if="searching || searchPending" class="mt-2 text-sm text-base-content/65" role="status" aria-live="polite">
+        {{ searching ? "กำลังค้นหารูปภาพ..." : "กำลังรอค้นหา..." }}
+      </p>
       <p v-if="searchError" role="alert" class="mt-2 text-sm text-error">{{ searchError }}</p>
 
-      <nav class="filter-row mt-4" aria-label="ตัวกรองรูปภาพ">
-        <button
-          v-for="filter in filters"
-          :key="filter.id"
-          type="button"
-          class="filter-chip"
-          :class="{ 'filter-chip-active': activeFilter === filter.id }"
-          :aria-pressed="activeFilter === filter.id"
-          @click="activeFilter = filter.id"
-        >
-          {{ filter.label }} <span class="filter-count">{{ filter.count }}</span>
-        </button>
-      </nav>
     </header>
 
-    <section v-if="photos.length > 0 && !loading && !errMessage" class="selection-toolbar mb-5" aria-label="การเลือกและสร้าง Embedding">
+    <section v-if="photos.length > 0 && !loading && !errMessage" class="selection-toolbar mb-5" aria-label="สถานะรูปภาพ">
       <p class="text-sm text-base-content/75" aria-live="polite">
-        <strong>{{ displayedPhotos.length }}</strong> รูป
-        <span v-if="selectedPhotoIDs.length"> · เลือกแล้ว {{ selectedPhotoIDs.length }} รูป</span>
-        <span v-if="batchEmbedding"> · กำลังทำ {{ batchProgress.completed }}/{{ batchProgress.total }}</span>
+        <strong>{{ readyPhotos.length }}</strong> รูปพร้อมค้นหา
+        <span v-if="pendingPhotoCount"> · รอ {{ pendingPhotoCount }} รูป</span>
+        <span v-if="processingPhotoCount"> · กำลังสร้าง {{ processingPhotoCount }} รูป</span>
+        <span v-if="failedPhotoCount" class="text-error"> · ล้มเหลว {{ failedPhotoCount }} รูป</span>
       </p>
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" class="btn btn-sm btn-outline" :disabled="selectablePhotos.length === 0 || deletingAllPhotos || batchEmbedding || embeddingPhotoIDs.length > 0" @click="toggleSelectAll">
-          {{ allSelectableSelected ? "ยกเลิกเลือก" : "เลือกทั้งหมด" }}
-        </button>
-        <button v-if="selectedPhotoIDs.length" type="button" class="btn btn-sm btn-ghost" :disabled="deletingAllPhotos || batchEmbedding || embeddingPhotoIDs.length > 0" @click="selectedPhotoIDs = []">
-          ล้างที่เลือก
-        </button>
-        <button type="button" class="btn btn-sm btn-secondary" :disabled="selectedPhotoIDs.length === 0 || deletingAllPhotos || batchEmbedding || embeddingPhotoIDs.length > 0" @click="generateSelectedEmbeddings">
-          {{ batchEmbedding ? "กำลังสร้าง..." : `สร้าง Embedding (${selectedPhotoIDs.length})` }}
-        </button>
-        <button type="button" class="btn btn-sm btn-outline btn-error" :disabled="loading || deletingAllPhotos || deletingPhotoID !== null || batchEmbedding || photos.length === 0" @click="openDeleteAllDialog">
+        <button type="button" class="btn btn-sm btn-outline btn-error" :disabled="loading || deletingAllPhotos || deletingPhotoID !== null || processingPhotoCount > 0 || photos.length === 0" @click="openDeleteAllDialog">
           {{ deletingAllPhotos ? `กำลังลบ ${deleteAllProgress.completed}/${deleteAllProgress.total}...` : "ลบทั้งหมด" }}
         </button>
       </div>
     </section>
-
-    <section v-if="batchEmbedding" class="mb-5 rounded-xl border border-base-300 bg-base-100 p-4" aria-label="ความคืบหน้าการสร้าง Embedding" role="status">
-      <div class="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <strong>กำลังสร้าง Embedding {{ batchProgress.completed }} / {{ batchProgress.total }} รูป</strong>
-        <span>{{ batchPercent }}%</span>
-      </div>
-      <progress class="progress progress-primary w-full" :value="batchProgress.completed" :max="batchProgress.total" :aria-label="`ทำแล้ว ${batchProgress.completed} จาก ${batchProgress.total} รูป`"></progress>
-      <p class="mt-2 text-sm text-base-content/75">
-        ใช้เวลา {{ formatDuration(batchProgress.elapsedMs) }}
-        <span v-if="batchEtaMs !== null"> · เหลือประมาณ {{ formatDuration(batchEtaMs) }}</span>
-        <span v-else> · กำลังคำนวณเวลาที่เหลือ</span>
-        <span v-if="batchProgress.failed > 0" class="text-error"> · ล้มเหลว {{ batchProgress.failed }} รูป</span>
-      </p>
+    <section v-if="failedPhotos.length > 0 && !loading" class="mb-5 rounded-xl border border-error/30 bg-base-100 p-4" aria-label="Embedding ที่ล้มเหลว">
+      <h2 class="font-semibold text-error">มีรูปที่สร้าง Embedding ไม่สำเร็จ {{ failedPhotos.length }} รูป</h2>
+      <ul class="mt-2 space-y-1 text-sm">
+        <li v-for="photo in failedPhotos" :key="photo.id" class="break-words">
+          <strong>{{ photo.filename }}</strong><span v-if="photo.analysisError"> — {{ photo.analysisError }}</span>
+        </li>
+      </ul>
     </section>
-    <p v-else-if="batchResult" class="mb-5 rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm" role="status" aria-live="polite">
-      {{ batchResult }}
-    </p>
 
     <div v-if="loading" class="gallery-message" aria-live="polite">
       <span class="loading loading-spinner loading-md text-primary" aria-hidden="true"></span>
@@ -111,41 +80,68 @@
       ยังไม่มีรูปที่ย้ายมาใน Destination ปัจจุบัน
     </div>
     <div v-else-if="displayedPhotos.length === 0" class="gallery-message">
-      <p class="font-semibold">{{ hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ไม่มีรูปในหมวดนี้" }}</p>
-      <button v-if="activeFilter !== 'all' || searchText" type="button" class="btn btn-sm btn-outline" @click="resetGalleryView">แสดงรูปทั้งหมด</button>
+      <p class="font-semibold">{{ hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ยังไม่มีรูปที่สร้าง Embedding เสร็จ" }}</p>
+      <p v-if="pendingPhotoCount || processingPhotoCount">รูปจะแสดงใน Gallery เมื่อสร้าง Embedding เสร็จ</p>
+      <p v-if="failedPhotoCount" class="text-error">มี {{ failedPhotoCount }} รูปที่สร้าง Embedding ไม่สำเร็จ กรุณารีเฟรชเพื่อตรวจสอบสถานะ</p>
+      <button v-if="searchText" type="button" class="btn btn-sm btn-outline" @click="clearSearch">ล้างคำค้นหา</button>
     </div>
 
     <section v-else class="thumbnail-grid" aria-label="ผลลัพธ์รูปภาพ">
-      <article v-for="photo in displayedPhotos" :key="photo.id" class="photo-tile" :class="{ 'photo-tile-selected': selectedPhotoIDs.includes(photo.id) }">
+      <article v-for="photo in displayedPhotos" :key="photo.id" class="photo-tile">
         <div class="thumbnail-frame">
           <img v-if="previewUrls[photo.id]" :src="previewUrls[photo.id]" :alt="photo.filename" loading="lazy" decoding="async" />
           <div v-else class="thumbnail-placeholder">
             {{ photo.status === "missing" ? "ไม่พบไฟล์รูปภาพ" : "กำลังโหลดตัวอย่าง..." }}
           </div>
-          <label v-if="photo.status === 'active' && photo.analysisStatus !== 'completed'" class="photo-select" :aria-label="`เลือกรูป ${photo.filename}`" :title="`เลือกรูป ${photo.filename}`">
-            <input v-model="selectedPhotoIDs" type="checkbox" class="checkbox checkbox-primary" :value="photo.id" :disabled="deletingAllPhotos || batchEmbedding || embeddingPhotoIDs.length > 0" />
-          </label>
-          <span class="photo-status" :class="photo.analysisStatus === 'completed' ? 'status-complete' : 'status-pending'">
-            {{ photo.analysisStatus === "completed" ? "พร้อมค้นหา" : "รอ Embedding" }}
-          </span>
+          <!-- <span class="photo-status status-complete">พร้อมค้นหา</span> -->
         </div>
         <div class="photo-tile-body">
           <h2 :title="photo.filename">{{ photo.filename }}</h2>
           <p class="file-state" :class="{ 'file-missing': photo.status !== 'active' }">
             {{ photo.status === "active" ? "ไฟล์พร้อมใช้งาน" : "ไม่พบไฟล์ในโฟลเดอร์" }}
           </p>
-          <p v-if="embeddingErrors[photo.id]" role="alert" class="mt-2 text-xs text-error">{{ embeddingErrors[photo.id] }}</p>
           <div class="photo-actions">
-            <button type="button" class="btn btn-xs btn-secondary" :disabled="photo.status !== 'active' || photo.analysisStatus === 'completed' || embeddingPhotoIDs.length > 0 || deletingAllPhotos || batchEmbedding" @click="generateEmbedding(photo)">
-              {{ embeddingPhotoIDs.includes(photo.id) ? "กำลังทำ..." : photo.analysisStatus === "completed" ? "ทำแล้ว" : "สร้าง Embedding" }}
-            </button>
-            <button type="button" class="btn btn-xs btn-ghost text-error" :disabled="loading || deletingPhotoID !== null || deletingAllPhotos || batchEmbedding" @click="openDeleteDialog(photo)">
+            <button type="button" class="btn btn-xs btn-ghost text-error" :disabled="loading || deletingPhotoID !== null || deletingAllPhotos" @click="openDeleteDialog(photo)">
               {{ deletingPhotoID === photo.id ? "กำลังลบ..." : "ลบ" }}
             </button>
           </div>
         </div>
       </article>
     </section>
+
+    <aside
+      v-if="embeddingProgress.isRunning && embeddingProgress.total > 0"
+      class="fixed bottom-3 right-3 z-40 w-[min(25rem,calc(100%-1.5rem))] rounded-lg border border-neutral-content/10 bg-neutral px-3 py-2 text-neutral-content shadow-lg sm:bottom-4 sm:right-4"
+      role="status"
+      aria-live="polite"
+      aria-label="ความคืบหน้าการสร้าง Embedding"
+    >
+      <div class="flex items-center gap-2.5">
+        <div class="min-w-0 flex-1">
+          <div class="mb-1 flex items-center justify-between gap-2 text-xs">
+            <span class="truncate font-semibold">Embedding · {{ embeddingProgress.finished }}/{{ embeddingProgress.total }}</span>
+            <span class="shrink-0 text-[11px] text-neutral-content/65">{{ embeddingProgress.percent }}%</span>
+          </div>
+          <progress
+            class="progress progress-success h-1.5 w-full bg-neutral-content/15"
+            :value="embeddingProgress.finished"
+            :max="embeddingProgress.total"
+            :aria-label="`เสร็จแล้ว ${embeddingProgress.finished} จาก ${embeddingProgress.total} รูป`"
+          ></progress>
+          <p class="mt-1 text-[10px] leading-tight text-neutral-content/70">
+            ค้นหาได้ {{ readyPhotos.length }} · รอ {{ pendingPhotoCount }}<span v-if="processingPhotoCount"> · ทำ {{ processingPhotoCount }}</span><span v-if="failedPhotoCount"> · พลาด {{ failedPhotoCount }}</span>
+          </p>
+        </div>
+        <button
+          type="button"
+          class="btn btn-xs h-7 min-h-7 shrink-0 border-neutral-content/20 bg-transparent px-2 text-[11px] text-neutral-content hover:bg-neutral-content/10"
+          :disabled="queueActionPending"
+          @click="toggleEmbeddingQueue"
+        >
+          {{ queueActionPending ? "กำลังอัปเดต..." : queuePaused ? "ทำต่อ" : "พัก" }}
+        </button>
+      </div>
+    </aside>
 
     <dialog ref="deleteDialog" class="modal" aria-labelledby="delete-dialog-title" @cancel="deletingPhotoID !== null && $event.preventDefault()">
       <div class="modal-box bg-base-100">
@@ -169,7 +165,7 @@
           ต้องการลบรูปทั้งหมด <strong>{{ deleteAllProgress.total || photos.length }} รูป</strong> จาก Gallery ใช่ไหม?
         </p>
         <p class="mt-2 text-sm text-base-content/75">
-          การทำงานนี้ไม่ขึ้นกับคำค้นหาหรือตัวกรอง และจะลบทั้งไฟล์จริงกับข้อมูลในฐานข้อมูล ไม่สามารถย้อนกลับผ่านแอปได้
+          การลบนี้รวมรูปที่ยังสร้าง Embedding ไม่เสร็จด้วย และจะลบทั้งไฟล์จริงกับข้อมูลในฐานข้อมูล ไม่สามารถย้อนกลับผ่านแอปได้
         </p>
         <p v-if="deletingAllPhotos" class="mt-4 text-sm" aria-live="polite">
           ดำเนินการแล้ว {{ deleteAllProgress.completed }}/{{ deleteAllProgress.total }} รูป
@@ -177,7 +173,7 @@
         <p v-if="deleteAllError" role="alert" class="mt-4 whitespace-pre-line text-sm text-error">{{ deleteAllError }}</p>
         <div class="modal-action">
           <button type="button" class="btn" :disabled="deletingAllPhotos" @click="deleteAllDialog?.close()">{{ deleteAllError ? "ปิด" : "ยกเลิก" }}</button>
-          <button type="button" class="btn btn-error" :disabled="deletingAllPhotos || photos.length === 0" @click="deleteAllPhotos">
+          <button type="button" class="btn btn-error" :disabled="deletingAllPhotos || processingPhotoCount > 0 || photos.length === 0" @click="deleteAllPhotos">
             {{ deletingAllPhotos ? "กำลังลบ..." : deleteAllError ? "ลองลบที่เหลืออีกครั้ง" : `ยืนยันลบ ${deleteAllProgress.total || photos.length} รูป` }}
           </button>
         </div>
@@ -187,15 +183,24 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   GetGalleryPhotos,
   GetGalleryPhotoPreview,
-  GenerateGalleryPhotoEmbedding,
   DeleteGalleryPhoto,
   SearchGalleryPhotos,
+  PauseEmbeddingQueue,
+  ResumeEmbeddingQueue,
+  IsEmbeddingQueuePaused,
 } from "../../wailsjs/go/controller/GalleryController";
+import { EventsOn } from "../../wailsjs/runtime/runtime";
 import type { dto } from "../../wailsjs/go/models";
+
+type EmbeddingStatusUpdate = {
+  photoId: number;
+  status: string;
+  error: string;
+};
 
 const photos = ref<dto.GalleryPhoto[]>([]);
 const loading = ref(true);
@@ -208,138 +213,150 @@ const pendingDelete = ref<dto.GalleryPhoto | null>(null);
 const deletingAllPhotos = ref(false);
 const deleteAllProgress = ref({ completed: 0, total: 0 });
 const deleteAllError = ref("");
-const embeddingPhotoIDs = ref<number[]>([]);
-const embeddingErrors = ref<Record<number, string>>({});
+const queuePaused = ref(false);
+const queueActionPending = ref(false);
 
 const searchText = ref("");
 const searchResults = ref<dto.PhotoSearchResult[]>([]);
 const hasSearched = ref(false);
 const searching = ref(false);
+const searchPending = ref(false);
 const searchError = ref("");
-const selectedPhotoIDs = ref<number[]>([]);
-const batchEmbedding = ref(false);
-const batchProgress = ref({ completed: 0, total: 0, failed: 0, elapsedMs: 0 });
-const batchResult = ref("");
-const activeFilter = ref<"all" | "pending" | "completed">("all");
+let searchDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+let searchRequestID = 0;
 
-const batchPercent = computed(() =>
-  batchProgress.value.total > 0
-    ? Math.floor((batchProgress.value.completed / batchProgress.value.total) * 100)
-    : 0,
+const readyPhotos = computed(() =>
+  photos.value.filter((photo) => photo.analysisStatus === "completed"),
 );
-const batchEtaMs = computed(() => {
-  const { completed, total, elapsedMs } = batchProgress.value;
-  if (completed === 0 || total === 0) return null;
-  return Math.max(0, (elapsedMs / completed) * (total - completed));
+const pendingPhotoCount = computed(() =>
+  photos.value.filter((photo) => photo.analysisStatus === "pending").length,
+);
+const processingPhotoCount = computed(() =>
+  photos.value.filter((photo) => photo.analysisStatus === "processing").length,
+);
+const failedPhotoCount = computed(() =>
+  photos.value.filter((photo) => photo.analysisStatus === "failed").length,
+);
+const failedPhotos = computed(() =>
+  photos.value.filter((photo) => photo.analysisStatus === "failed"),
+);
+const embeddingProgress = computed(() => {
+  const total = photos.value.length;
+  const finished = readyPhotos.value.length + failedPhotoCount.value;
+  return {
+    total,
+    finished,
+    percent: total === 0 ? 0 : Math.round((finished / total) * 100),
+    isRunning: pendingPhotoCount.value > 0 || processingPhotoCount.value > 0,
+  };
 });
 
-function formatDuration(milliseconds: number): string {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
+async function toggleEmbeddingQueue() {
+  if (queueActionPending.value) return;
 
-  if (hours > 0) return `${hours} ชม. ${minutes} นาที`;
-  if (minutes > 0) return seconds > 0 ? `${minutes} นาที ${seconds} วินาที` : `${minutes} นาที`;
-  return `${seconds} วินาที`;
+  queueActionPending.value = true;
+  try {
+    if (queuePaused.value) {
+      await ResumeEmbeddingQueue();
+      queuePaused.value = false;
+    } else {
+      await PauseEmbeddingQueue();
+      queuePaused.value = true;
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    searchError.value = `เปลี่ยนสถานะคิว Embedding ไม่สำเร็จ: ${message}`;
+  } finally {
+    queueActionPending.value = false;
+  }
 }
 
-async function searchGallery() {
-  const text = searchText.value.trim();
+async function searchGallery(text: string, requestID: number) {
   if (!text) {
     hasSearched.value = false;
     searchResults.value = [];
     searchError.value = "";
-    activeFilter.value = "all";
     return;
   }
 
   searching.value = true;
+  searchPending.value = false;
   searchError.value = "";
 
   try {
-    searchResults.value = await SearchGalleryPhotos(text);
-    hasSearched.value = true;
+    const results = await SearchGalleryPhotos(text);
+    if (requestID === searchRequestID) {
+      searchResults.value = results;
+      hasSearched.value = true;
+    }
   } catch (err) {
-    searchError.value = err instanceof Error ? err.message : String(err);
+    if (requestID === searchRequestID) {
+      searchError.value = err instanceof Error ? err.message : String(err);
+    }
   } finally {
-    searching.value = false;
+    if (requestID === searchRequestID) searching.value = false;
   }
 }
 
+watch(searchText, (value) => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  const requestID = ++searchRequestID;
+  const text = value.trim();
+  searchError.value = "";
+
+  if (!text) {
+    searchPending.value = false;
+    searching.value = false;
+    hasSearched.value = false;
+    searchResults.value = [];
+    return;
+  }
+
+  searchPending.value = true;
+  searchDebounceTimer = setTimeout(() => {
+    void searchGallery(text, requestID);
+  }, 400);
+});
+
 function clearSearch() {
   searchText.value = "";
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchRequestID += 1;
+  searchPending.value = false;
+  searching.value = false;
   hasSearched.value = false;
   searchResults.value = [];
   searchError.value = "";
-  activeFilter.value = "all";
-}
-
-function resetGalleryView() {
-  activeFilter.value = "all";
-  clearSearch();
 }
 
 const searchMatchedPhotos = computed(() => {
-  if (!hasSearched.value || !searchText.value.trim()) return photos.value;
+  if (!hasSearched.value || !searchText.value.trim()) return readyPhotos.value;
 
-  const photosByID = new Map(photos.value.map((photo) => [photo.id, photo]));
+  const photosByID = new Map(readyPhotos.value.map((photo) => [photo.id, photo]));
   return searchResults.value
     .map((result) => photosByID.get(result.id))
     .filter((photo): photo is dto.GalleryPhoto => photo !== undefined);
 });
 
-const displayedPhotos = computed(() => {
-  if (activeFilter.value === "pending") {
-    return searchMatchedPhotos.value.filter(
-      (photo) => photo.status === "active" && photo.analysisStatus !== "completed",
-    );
+const displayedPhotos = searchMatchedPhotos;
+
+async function loadCompletedPreview(photo: dto.GalleryPhoto) {
+  if (photo.status !== "active" || previewUrls.value[photo.id]) return;
+  try {
+    previewUrls.value[photo.id] = await GetGalleryPhotoPreview(photo.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    errMessage.value = `${photo.filename}: ${message}`;
   }
-  if (activeFilter.value === "completed") {
-    return searchMatchedPhotos.value.filter((photo) => photo.analysisStatus === "completed");
-  }
-  return searchMatchedPhotos.value;
-});
+}
 
-const filters = computed(() => [
-  { id: "all" as const, label: "ทั้งหมด", count: searchMatchedPhotos.value.length },
-  {
-    id: "pending" as const,
-    label: "รอสร้าง Embedding",
-    count: searchMatchedPhotos.value.filter(
-      (photo) => photo.status === "active" && photo.analysisStatus !== "completed",
-    ).length,
-  },
-  {
-    id: "completed" as const,
-    label: "สร้างแล้ว",
-    count: searchMatchedPhotos.value.filter((photo) => photo.analysisStatus === "completed").length,
-  },
-]);
+function onEmbeddingStatus(update: EmbeddingStatusUpdate) {
+  const photo = photos.value.find((item) => item.id === update.photoId);
+  if (!photo) return;
 
-const selectablePhotos = computed(() =>
-  displayedPhotos.value.filter(
-    (photo) => photo.status === "active" && photo.analysisStatus !== "completed",
-  ),
-);
-
-const allSelectableSelected = computed(
-  () =>
-    selectablePhotos.value.length > 0 &&
-    selectablePhotos.value.every((photo) => selectedPhotoIDs.value.includes(photo.id)),
-);
-
-function toggleSelectAll() {
-  const visibleIDs = new Set(selectablePhotos.value.map((photo) => photo.id));
-
-  if (allSelectableSelected.value) {
-    selectedPhotoIDs.value = selectedPhotoIDs.value.filter((id) => !visibleIDs.has(id));
-    return;
-  }
-
-  selectedPhotoIDs.value = [
-    ...new Set([...selectedPhotoIDs.value, ...visibleIDs]),
-  ];
+  photo.analysisStatus = update.status;
+  photo.analysisError = update.error;
+  if (update.status === "completed") void loadCompletedPreview(photo);
 }
 
 async function loadPhotos() {
@@ -350,7 +367,7 @@ async function loadPhotos() {
     photos.value = await GetGalleryPhotos();
 
     previewUrls.value = {};
-    await loadPreviews(photos.value);
+    await loadPreviews(readyPhotos.value);
   } catch (err) {
     errMessage.value = err instanceof Error ? err.message : String(err);
   } finally {
@@ -381,7 +398,7 @@ function openDeleteDialog(photo: dto.GalleryPhoto) {
 }
 
 function openDeleteAllDialog() {
-  if (photos.value.length === 0 || loading.value || deletingAllPhotos.value) return;
+  if (photos.value.length === 0 || loading.value || deletingAllPhotos.value || processingPhotoCount.value > 0) return;
 
   deleteAllError.value = "";
   deleteAllProgress.value = { completed: 0, total: photos.value.length };
@@ -392,8 +409,7 @@ async function deleteAllPhotos() {
   if (
     deletingAllPhotos.value ||
     deletingPhotoID.value !== null ||
-    embeddingPhotoIDs.value.length > 0 ||
-    batchEmbedding.value
+    processingPhotoCount.value > 0
   ) return;
 
   const targets = [...photos.value];
@@ -410,8 +426,6 @@ async function deleteAllPhotos() {
         await DeleteGalleryPhoto(photo.id);
         photos.value = photos.value.filter((item) => item.id !== photo.id);
         delete previewUrls.value[photo.id];
-        delete embeddingErrors.value[photo.id];
-        selectedPhotoIDs.value = selectedPhotoIDs.value.filter((id) => id !== photo.id);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         failures.push(`${photo.filename}: ${message}`);
@@ -425,91 +439,10 @@ async function deleteAllPhotos() {
       deleteAllProgress.value = { completed: 0, total: photos.value.length };
     } else {
       deleteAllDialog.value?.close();
-      selectedPhotoIDs.value = [];
       deleteAllProgress.value = { completed: 0, total: 0 };
     }
   } finally {
     deletingAllPhotos.value = false;
-  }
-}
-
-async function generateEmbedding(photo: dto.GalleryPhoto) {
-  if (
-    photo.status !== "active" ||
-    photo.analysisStatus === "completed" ||
-    embeddingPhotoIDs.value.length > 0 ||
-    batchEmbedding.value
-  ) {
-    return;
-  }
-
-  await requestPhotoEmbedding(photo);
-}
-
-async function requestPhotoEmbedding(photo: dto.GalleryPhoto): Promise<boolean> {
-  embeddingPhotoIDs.value = [...embeddingPhotoIDs.value, photo.id];
-  delete embeddingErrors.value[photo.id];
-
-  try {
-    await GenerateGalleryPhotoEmbedding(photo.id);
-    photo.analysisStatus = "completed";
-    selectedPhotoIDs.value = selectedPhotoIDs.value.filter((id) => id !== photo.id);
-    return true;
-  } catch (err) {
-    embeddingErrors.value[photo.id] =
-      err instanceof Error ? err.message : String(err);
-    return false;
-  } finally {
-    embeddingPhotoIDs.value = embeddingPhotoIDs.value.filter((id) => id !== photo.id);
-  }
-}
-
-async function generateSelectedEmbeddings() {
-  if (batchEmbedding.value || embeddingPhotoIDs.value.length > 0) return;
-
-  const selectedIDs = new Set(selectedPhotoIDs.value);
-  const targets = photos.value.filter(
-    (photo) =>
-      selectedIDs.has(photo.id) &&
-      photo.status === "active" &&
-      photo.analysisStatus !== "completed",
-  );
-
-  if (targets.length === 0) return;
-
-  batchEmbedding.value = true;
-  batchResult.value = "";
-  batchProgress.value = { completed: 0, total: targets.length, failed: 0, elapsedMs: 0 };
-  const startedAt = Date.now();
-  const timer = setInterval(() => {
-    batchProgress.value.elapsedMs = Date.now() - startedAt;
-  }, 1000);
-
-  try {
-    let nextIndex = 0;
-
-    async function worker() {
-      while (true) {
-        const photo = targets[nextIndex];
-        nextIndex += 1;
-
-        if (!photo) return;
-
-        const succeeded = await requestPhotoEmbedding(photo);
-        if (!succeeded) batchProgress.value.failed += 1;
-        batchProgress.value.completed += 1;
-      }
-    }
-
-    const workerCount = Math.min(2, targets.length);
-    await Promise.all(Array.from({ length: workerCount }, () => worker()));
-  } finally {
-    clearInterval(timer);
-    batchProgress.value.elapsedMs = Date.now() - startedAt;
-    batchEmbedding.value = false;
-    const failed = batchProgress.value.failed;
-    const processed = batchProgress.value.completed;
-    batchResult.value = `ประมวลผลเสร็จ ${processed}/${targets.length} รูป ใช้เวลา ${formatDuration(batchProgress.value.elapsedMs)}${failed > 0 ? ` · ไม่สำเร็จ ${failed} รูป (ดูข้อความผิดพลาดในการ์ดรูป)` : ""}`;
   }
 }
 
@@ -541,7 +474,19 @@ function refreshPhoto() {
   loadPhotos();
 }
 
-onMounted(loadPhotos);
+let stopEmbeddingListener: (() => void) | undefined;
+onMounted(() => {
+  stopEmbeddingListener = EventsOn("embedding:status", onEmbeddingStatus);
+  void IsEmbeddingQueuePaused().then((paused) => {
+    queuePaused.value = paused;
+  }).catch((err) => console.error("อ่านสถานะคิว Embedding ไม่สำเร็จ", err));
+  void loadPhotos();
+});
+onBeforeUnmount(() => {
+  if (searchDebounceTimer) clearTimeout(searchDebounceTimer);
+  searchRequestID += 1;
+  stopEmbeddingListener?.();
+});
 </script>
 
 <style scoped>
@@ -584,11 +529,6 @@ onMounted(loadPhotos);
   color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
 }
 
-.search-submit {
-  min-height: 42px;
-  border-radius: 12px;
-}
-
 .clear-search {
   display: grid;
   width: 40px;
@@ -604,46 +544,6 @@ onMounted(loadPhotos);
 
 .clear-search:hover {
   background: color-mix(in srgb, var(--color-base-content) 8%, transparent);
-}
-
-.filter-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 2px 0 5px;
-  scrollbar-width: thin;
-}
-
-.filter-chip {
-  display: inline-flex;
-  min-height: 40px;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--color-base-content) 16%, transparent);
-  border-radius: 999px;
-  background: var(--color-base-100);
-  color: color-mix(in srgb, var(--color-base-content) 88%, transparent);
-  font-size: 0.875rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
-}
-
-.filter-chip:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 62%, transparent);
-}
-
-.filter-chip-active {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-primary-content);
-}
-
-.filter-count {
-  font-size: 0.75rem;
-  opacity: 0.78;
 }
 
 .selection-toolbar {
@@ -678,11 +578,6 @@ onMounted(loadPhotos);
   box-shadow: 0 8px 22px rgb(55 39 27 / 9%);
 }
 
-.photo-tile-selected {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 28%, transparent);
-}
-
 .thumbnail-frame {
   position: relative;
   aspect-ratio: 4 / 3;
@@ -708,20 +603,6 @@ onMounted(loadPhotos);
   text-align: center;
 }
 
-.photo-select {
-  position: absolute;
-  top: 9px;
-  left: 9px;
-  display: grid;
-  min-width: 42px;
-  min-height: 42px;
-  place-items: center;
-  border: 1px solid rgb(255 255 255 / 75%);
-  border-radius: 10px;
-  background: rgb(255 255 255 / 90%);
-  cursor: pointer;
-}
-
 .photo-status {
   position: absolute;
   right: 8px;
@@ -740,10 +621,6 @@ onMounted(loadPhotos);
 
 .status-complete {
   color: #276749;
-}
-
-.status-pending {
-  color: #81540e;
 }
 
 .photo-tile-body {
@@ -809,10 +686,6 @@ onMounted(loadPhotos);
 
   .search-shell input {
     font-size: 0.9rem;
-  }
-
-  .search-submit {
-    padding-inline: 12px;
   }
 
   .thumbnail-grid {

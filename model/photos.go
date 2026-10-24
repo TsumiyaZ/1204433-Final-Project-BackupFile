@@ -3,8 +3,10 @@ package model
 import "time"
 
 const (
-	AnalysisStatusPending   = "pending"
-	AnalysisStatusCompleted = "completed"
+	AnalysisStatusPending    = "pending"
+	AnalysisStatusProcessing = "processing"
+	AnalysisStatusCompleted  = "completed"
+	AnalysisStatusFailed     = "failed"
 )
 
 type Photo struct {
@@ -18,4 +20,5 @@ type Photo struct {
 	Embedding      []byte `gorm:"type:blob"`
 	EmbeddingModel string
 	CreatedAt      time.Time
+	AnalysisError  string `gorm:"type:text"`
 }
