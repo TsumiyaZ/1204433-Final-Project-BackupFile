@@ -33,8 +33,8 @@ func TestInstallRuntimeSmoke(t *testing.T) {
 		t.Skip("set PHOTO_BACKUP_TEST_RUNTIME_INSTALL=1 to download and verify the pinned runtime")
 	}
 
-	executable, err := installServer(context.Background(), func(message string) {
-		t.Log(message)
+	executable, err := installServer(context.Background(), func(progress SetupProgress) {
+		t.Log(progress.Message)
 	})
 	if err != nil {
 		t.Fatal(err)

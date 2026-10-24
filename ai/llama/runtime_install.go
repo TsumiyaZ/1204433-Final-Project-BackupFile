@@ -68,7 +68,7 @@ var llamaRuntimeAssets = map[string]llamaRuntimeAsset{
 	},
 }
 
-func installServer(ctx context.Context, onStatus func(message string)) (string, error) {
+func installServer(ctx context.Context, onStatus func(SetupProgress)) (string, error) {
 	asset, ok := llamaRuntimeAssets[runtime.GOOS+"/"+runtime.GOARCH]
 	if !ok {
 		return "", fmt.Errorf("automatic llama.cpp setup is not supported on %s/%s", runtime.GOOS, runtime.GOARCH)
@@ -103,9 +103,7 @@ func installServer(ctx context.Context, onStatus func(message string)) (string, 
 	if err := os.Mkdir(extractDir, 0o755); err != nil {
 		return "", err
 	}
-	if onStatus != nil {
-		onStatus("ดาวน์โหลดส่วนประกอบเสร็จแล้ว กำลังติดตั้ง...")
-	}
+	reportSetupProgress(onStatus, SetupProgress{Message: "ดาวน์โหลดส่วนประกอบเสร็จแล้ว กำลังติดตั้ง..."})
 	if err := extractRuntimeArchive(archivePath, asset.format, extractDir); err != nil {
 		return "", fmt.Errorf("cannot unpack llama.cpp runtime: %w", err)
 	}
@@ -126,7 +124,7 @@ func downloadRuntime(
 	ctx context.Context,
 	asset llamaRuntimeAsset,
 	destination string,
-	onStatus func(message string),
+	onStatus func(SetupProgress),
 ) error {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, asset.url, nil)
 	if err != nil {
@@ -142,6 +140,11 @@ func downloadRuntime(
 	if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("llama.cpp download returned HTTP %s", response.Status)
 	}
+	reportSetupProgress(onStatus, SetupProgress{
+		Message:     "กำลังดาวน์โหลด llama.cpp",
+		Percent:     0,
+		Determinate: response.ContentLength > 0,
+	})
 
 	file, err := os.OpenFile(destination, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o600)
 	if err != nil {
@@ -155,9 +158,11 @@ func downloadRuntime(
 		hasher: hasher,
 		total:  response.ContentLength,
 		onStatus: func(percent int) {
-			if onStatus != nil {
-				onStatus(fmt.Sprintf("กำลังดาวน์โหลด llama.cpp %d%%", percent))
-			}
+			reportSetupProgress(onStatus, SetupProgress{
+				Message:     "กำลังดาวน์โหลด llama.cpp",
+				Percent:     percent,
+				Determinate: response.ContentLength > 0,
+			})
 		},
 	}
 	if _, err := io.Copy(writer, response.Body); err != nil {

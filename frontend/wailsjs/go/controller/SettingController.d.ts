@@ -7,3 +7,5 @@ export function GetSetting():Promise<model.Setting>;
 export function SaveSetting(arg1:string,arg2:string):Promise<void>;
 
 export function ShowDatabaseInFolder():Promise<void>;
+
+export function ShowModelFolder():Promise<void>;

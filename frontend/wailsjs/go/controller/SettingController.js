@@ -13,3 +13,7 @@ export function SaveSetting(arg1, arg2) {
 export function ShowDatabaseInFolder() {
   return window['go']['controller']['SettingController']['ShowDatabaseInFolder']();
 }
+
+export function ShowModelFolder() {
+  return window['go']['controller']['SettingController']['ShowModelFolder']();
+}

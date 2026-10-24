@@ -22,6 +22,12 @@ import (
 
 const embeddingDimensions = 768
 
+type SetupProgress struct {
+	Message     string
+	Percent     int
+	Determinate bool
+}
+
 type Client struct {
 	baseURL    string
 	httpClient *http.Client
@@ -97,25 +103,29 @@ type imageInput struct {
 	Content []imageContent `json:"content"`
 }
 
-func StartServer(ctx context.Context, onStatus func(message string)) error {
+func StartServer(ctx context.Context, onStatus func(SetupProgress)) error {
 	executablePath, err := ResolveServerPath()
 	if err != nil {
 		if strings.TrimSpace(os.Getenv("LLAMA_SERVER_PATH")) != "" {
 			return err
 		}
-		if onStatus != nil {
-			onStatus("ยังไม่พบ llama.cpp กำลังดาวน์โหลดส่วนประกอบที่จำเป็น...")
-		}
+		reportSetupProgress(onStatus, SetupProgress{Message: "ยังไม่พบ llama.cpp กำลังดาวน์โหลดส่วนประกอบที่จำเป็น..."})
 		executablePath, err = installServer(ctx, onStatus)
 		if err != nil {
 			return fmt.Errorf("cannot prepare llama.cpp runtime: %w", err)
 		}
 	}
 
+	modelPath, mmprojPath, err := ensureEmbeddingModel(ctx, onStatus)
+	if err != nil {
+		return fmt.Errorf("cannot prepare embedding model: %w", err)
+	}
+
 	cmd := exec.CommandContext(
 		ctx,
 		executablePath,
-		"-hf", "ggml-org/embeddinggemma-2-GGUF:Q8_0",
+		"-m", modelPath,
+		"--mmproj", mmprojPath,
 		"--embeddings",
 		"--host", "127.0.0.1",
 		"--port", "8080",

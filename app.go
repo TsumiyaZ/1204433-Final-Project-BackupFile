@@ -17,8 +17,10 @@ type App struct {
 }
 
 type EmbeddingStatus struct {
-	State   string `json:"state"`
-	Message string `json:"message"`
+	State           string `json:"state"`
+	Message         string `json:"message"`
+	Progress        int    `json:"progress"`
+	ProgressVisible bool   `json:"progressVisible"`
 }
 
 func (a *App) SelectSourceDirectory() (string, error) {
@@ -59,8 +61,26 @@ func (a *App) setEmbeddingStatus(state string, message string) {
 	a.embeddingStatusMu.Lock()
 	defer a.embeddingStatusMu.Unlock()
 	a.embeddingStatus = EmbeddingStatus{
-		State:   state,
-		Message: message,
+		State:           state,
+		Message:         message,
+		ProgressVisible: false,
+	}
+}
+
+func (a *App) setEmbeddingProgress(message string, progress int, visible bool) {
+	if progress < 0 {
+		progress = 0
+	}
+	if progress > 100 {
+		progress = 100
+	}
+	a.embeddingStatusMu.Lock()
+	defer a.embeddingStatusMu.Unlock()
+	a.embeddingStatus = EmbeddingStatus{
+		State:           "loading",
+		Message:         message,
+		Progress:        progress,
+		ProgressVisible: visible,
 	}
 }
 

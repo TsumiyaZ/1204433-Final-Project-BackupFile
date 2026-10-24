@@ -144,6 +144,8 @@ export namespace main {
 	export class EmbeddingStatus {
 	    state: string;
 	    message: string;
+	    progress: number;
+	    progressVisible: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new EmbeddingStatus(source);
@@ -153,6 +155,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.state = source["state"];
 	        this.message = source["message"];
+	        this.progress = source["progress"];
+	        this.progressVisible = source["progressVisible"];
 	    }
 	}
 

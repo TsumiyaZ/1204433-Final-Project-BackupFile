@@ -1,44 +1,43 @@
 <template>
   <main class="gallery-page mx-auto max-w-[1500px] px-5 py-6 sm:px-8">
     <header class="gallery-header">
-      <div class="gallery-heading-row">
-        <div class="min-w-0">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">Photo Backup</p>
-          <h1 class="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">ค้นหาในคลังรูปภาพ</h1>
-        </div>
+
+      <div class="gallery-search-row">
+        <form class="search-shell" role="search" @submit.prevent>
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="search-icon">
+            <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2" />
+            <path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <label class="sr-only" for="gallery-search">ค้นหารูปภาพ</label>
+          <input
+            id="gallery-search"
+            v-model="searchText"
+            type="text"
+            autocomplete="off"
+            placeholder="อธิบายสิ่งที่จำได้ เช่น เรือกลางทะเล หรือ หมา..."
+          />
+          <button v-if="searchText" type="button" class="clear-search" aria-label="ล้างคำค้นหา" @click="clearSearch">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" class="h-5 w-5">
+              <path d="m6 6 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            </svg>
+          </button>
+        </form>
         <button
           type="button"
-          class="btn btn-outline refresh-button"
-          aria-label="รีเฟรชรูปภาพ"
+          class="btn btn-square btn-outline refresh-button"
+          :aria-label="loading ? 'กำลังโหลดรูปภาพ' : 'รีเฟรชรูปภาพ'"
+          :aria-busy="loading"
+          :title="loading ? 'กำลังโหลดรูปภาพ...' : 'รีเฟรชรูปภาพ'"
           :disabled="loading || deletingPhotoID !== null || deletingAllPhotos"
           @click="refreshPhoto"
         >
-          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="h-5 w-5">
-            <path d="M20 7v5h-5M4 17v-5h5m10-1a7 7 0 0 0-12.3-4.6L4 12m16 0-2.7 5.6A7 7 0 0 1 5 17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="h-5 w-5" :class="{ 'refresh-icon-spinning': loading }">
+            <path d="M20 7v5h-5M4 17v-5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M5.64 5.64A9 9 0 0 1 20 12M4 12a9 9 0 0 0 14.36 6.36" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
           </svg>
-          <span class="hidden sm:inline">{{ loading ? "กำลังโหลด..." : "รีเฟรช" }}</span>
         </button>
       </div>
 
-      <form class="search-shell" role="search" @submit.prevent>
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="search-icon">
-          <circle cx="10.8" cy="10.8" r="6.8" stroke="currentColor" stroke-width="2" />
-          <path d="m16 16 4.2 4.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        <label class="sr-only" for="gallery-search">ค้นหารูปภาพ</label>
-        <input
-          id="gallery-search"
-          v-model="searchText"
-          type="text"
-          autocomplete="off"
-          placeholder="อธิบายสิ่งที่จำได้ เช่น เรือกลางทะเล หรือ หมา..."
-        />
-        <button v-if="searchText" type="button" class="clear-search" aria-label="ล้างคำค้นหา" @click="clearSearch">
-          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true" class="h-5 w-5">
-            <path d="m6 6 8 8m0-8-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-          </svg>
-        </button>
-      </form>
       <div class="gallery-filter-row" aria-label="ตัวกรองรูปภาพ">
         <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'all' }" :aria-pressed="activeFilter === 'all'" @click="activeFilter = 'all'">
           ทั้งหมด <span>{{ readyPhotos.length }}</span>
@@ -644,16 +643,17 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 12%, transparent);
 }
 
-.gallery-heading-row {
+.gallery-search-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
 .search-shell {
   display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
   min-height: 52px;
   align-items: center;
   gap: 13px;
@@ -689,6 +689,35 @@ onBeforeUnmount(() => {
 
 .search-shell input::placeholder {
   color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+}
+
+.refresh-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
+  color: color-mix(in srgb, var(--color-base-content) 82%, transparent);
+  transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.refresh-button:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+
+.refresh-button:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.refresh-icon-spinning {
+  animation: refresh-spin 900ms linear infinite;
+}
+
+@keyframes refresh-spin {
+  to { transform: rotate(360deg); }
 }
 
 .clear-search {
@@ -1025,16 +1054,6 @@ onBeforeUnmount(() => {
 
   .search-shell input {
     font-size: 0.9rem;
-  }
-
-  .gallery-heading-row {
-    align-items: flex-start;
-  }
-
-  .refresh-button {
-    width: 42px;
-    min-width: 42px;
-    padding: 0;
   }
 
   .thumbnail-grid {

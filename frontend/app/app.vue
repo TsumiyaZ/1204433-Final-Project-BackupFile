@@ -34,6 +34,27 @@
         {{ embeddingStatus.message }}
       </p>
 
+      <div v-if="embeddingStatus.state !== 'error'" class="mx-auto mt-5 max-w-md text-left">
+        <div v-if="embeddingStatus.progressVisible" class="mb-2 flex justify-end text-xs font-medium text-base-content/65">
+          {{ embeddingStatus.progress }}%
+        </div>
+        <div
+          class="h-2 overflow-hidden rounded-full bg-base-300"
+          role="progressbar"
+          :aria-valuenow="embeddingStatus.progressVisible ? embeddingStatus.progress : undefined"
+          :aria-valuemin="embeddingStatus.progressVisible ? 0 : undefined"
+          :aria-valuemax="embeddingStatus.progressVisible ? 100 : undefined"
+          :aria-label="embeddingStatus.message"
+        >
+          <div
+            v-if="embeddingStatus.progressVisible"
+            class="h-full rounded-full bg-primary transition-[width] duration-300 ease-out"
+            :style="{ width: `${embeddingStatus.progress}%` }"
+          />
+          <div v-else class="h-full w-1/3 animate-pulse rounded-full bg-primary/80" />
+        </div>
+      </div>
+
       <p
         v-if="embeddingStatus.state !== 'error'"
         class="mx-auto mt-5 max-w-md text-sm leading-6 text-base-content/60"
@@ -65,11 +86,15 @@ import { GetEmbeddingStatus } from "../wailsjs/go/main/App";
 type EmbeddingStatus = {
   state: string;
   message: string;
+  progress: number;
+  progressVisible: boolean;
 };
 
 const embeddingStatus = ref<EmbeddingStatus>({
   state: "loading",
   message: "กำลังเชื่อมต่อระบบโมเดล...",
+  progress: 0,
+  progressVisible: false,
 });
 
 let statusTimer: ReturnType<typeof setInterval> | undefined;
@@ -81,6 +106,8 @@ async function refreshEmbeddingStatus() {
     embeddingStatus.value = {
       state: "error",
       message: "ไม่สามารถตรวจสอบสถานะโมเดลจากแอปได้",
+      progress: 0,
+      progressVisible: false,
     };
   }
 }

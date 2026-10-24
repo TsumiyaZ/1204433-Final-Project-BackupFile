@@ -3,7 +3,7 @@
     <header
       class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
     >
-      <nav class="navbar mx-auto min-h-16 max-w-7xl px-4 sm:px-6">
+      <nav class="navbar mx-auto min-h-16 w-full max-w-[1500px] px-5 sm:px-8">
         <div class="navbar-start">
           <NuxtLink
             to="/gallery"
@@ -117,6 +117,16 @@
                 <p class="mt-0.5 break-words text-xs leading-5 text-base-content/65">{{ modelStatus.message }}</p>
               </div>
             </div>
+            <button
+              type="button"
+              class="btn btn-outline mt-3 min-h-11 w-full"
+              :disabled="modelFolderPending"
+              @click="showModelFolder"
+            >
+              <span v-if="modelFolderPending" class="loading loading-spinner loading-xs" aria-hidden="true" />
+              เปิดตำแหน่งไฟล์โมเดล
+            </button>
+            <p v-if="modelFolderError" class="mt-2 break-words text-xs text-error" role="alert">{{ modelFolderError }}</p>
           </section>
 
           <p class="border-t border-base-300 pt-5 text-xs leading-5 text-base-content/55">ประมวลผลการค้นหาด้วย EmbeddingGemma ผ่าน llama.cpp ในเครื่องของคุณ</p>
@@ -128,7 +138,7 @@
 
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { GetSetting, ShowDatabaseInFolder } from "../../wailsjs/go/controller/SettingController";
+import { GetSetting, ShowDatabaseInFolder, ShowModelFolder } from "../../wailsjs/go/controller/SettingController";
 import { GetEmbeddingStatus } from "../../wailsjs/go/main/App";
 
 const route = useRoute();
@@ -137,6 +147,8 @@ const settingPaths = ref({ source: "", destination: "" });
 const modelStatus = ref({ state: "loading", message: "กำลังเชื่อมต่อกับโมเดล..." });
 const databaseLocationPending = ref(false);
 const databaseLocationError = ref("");
+const modelFolderPending = ref(false);
+const modelFolderError = ref("");
 let settingsStatusTimer: ReturnType<typeof setInterval> | undefined;
 
 const navigation = [
@@ -179,6 +191,19 @@ async function showDatabaseInFolder() {
     databaseLocationError.value = error instanceof Error ? error.message : String(error);
   } finally {
     databaseLocationPending.value = false;
+  }
+}
+
+async function showModelFolder() {
+  if (modelFolderPending.value) return;
+  modelFolderPending.value = true;
+  modelFolderError.value = "";
+  try {
+    await ShowModelFolder();
+  } catch (error) {
+    modelFolderError.value = error instanceof Error ? error.message : String(error);
+  } finally {
+    modelFolderPending.value = false;
   }
 }
 

@@ -2,7 +2,9 @@ package controller
 
 import (
 	"context"
+	"os"
 
+	"FinalProject/ai/llama"
 	"FinalProject/internal/fileopener"
 	"FinalProject/model"
 	"FinalProject/repository"
@@ -41,4 +43,15 @@ func (c *SettingController) ShowDatabaseInFolder() error {
 		return err
 	}
 	return fileopener.Reveal(databasePath)
+}
+
+func (c *SettingController) ShowModelFolder() error {
+	modelDirectory, err := llama.ModelDirectory()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(modelDirectory, 0o755); err != nil {
+		return err
+	}
+	return fileopener.Open(modelDirectory)
 }

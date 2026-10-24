@@ -74,8 +74,12 @@ func main() {
 			controller.SetBackupContext(backupController, ctx)
 			app.setEmbeddingStatus("loading", "กำลังตรวจสอบส่วนประกอบสำหรับค้นหารูป...")
 			go func() {
-				if err := llama.StartServer(ctx, func(message string) {
-					app.setEmbeddingStatus("loading", message)
+				if err := llama.StartServer(ctx, func(progress llama.SetupProgress) {
+					if progress.Determinate {
+						app.setEmbeddingProgress(progress.Message, progress.Percent, true)
+						return
+					}
+					app.setEmbeddingStatus("loading", progress.Message)
 				}); err != nil {
 					app.setEmbeddingStatus(
 						"error",
