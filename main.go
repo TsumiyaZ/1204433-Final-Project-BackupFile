@@ -42,14 +42,13 @@ func main() {
 	println("Connected Database")
 
 	embeddingEngine := llama.NewClient("http://127.0.0.1:8080")
-	captionEngine := llama.NewCaptionClient("http://127.0.0.1:8081")
 
 	settingRepo := repository.NewSettingRepository(db)
 	settingService := service.NewSettingService(settingRepo)
 	settingController := controller.NewSettingController(settingService)
 
 	photoRepo := repository.NewPhotoRepository(db)
-	photoService := service.NewPhotoService(photoRepo, embeddingEngine, captionEngine)
+	photoService := service.NewPhotoService(photoRepo, embeddingEngine)
 	embeddingQueue := service.NewEmbeddingQueue(photoRepo, settingRepo, photoService)
 	photoController := controller.NewPhotoController(photoService)
 
@@ -100,23 +99,6 @@ func main() {
 					}
 					return
 				}
-				app.setEmbeddingStatus("loading", "กำลังเตรียมโมเดลสำหรับเขียนคำบรรยายภาพ...")
-				if err := llama.StartCaptionServer(ctx, func(progress llama.SetupProgress) {
-					if progress.Determinate {
-						app.setEmbeddingProgress(progress.Message, progress.Percent, true)
-						return
-					}
-					app.setEmbeddingStatus("loading", progress.Message)
-				}); err != nil {
-					app.setEmbeddingStatus("error", "เตรียมโมเดลคำบรรยายภาพไม่สำเร็จ: "+err.Error())
-					return
-				}
-				if err := captionEngine.WaitUntilReady(ctx); err != nil {
-					if ctx.Err() == nil {
-						app.setEmbeddingStatus("error", "เริ่มโมเดลคำบรรยายภาพไม่สำเร็จ: "+err.Error())
-					}
-					return
-				}
 				if err := embeddingQueue.Start(ctx, func(update service.EmbeddingStatusUpdate) {
 					runtime.EventsEmit(ctx, "embedding:status", update)
 				}); err != nil {
@@ -126,7 +108,7 @@ func main() {
 					)
 					return
 				}
-				app.setEmbeddingStatus("ready", "โมเดลค้นหาและคำบรรยายภาพพร้อมใช้งานแล้ว")
+				app.setEmbeddingStatus("ready", "โมเดลพร้อมสร้าง embedding และ tag รูปภาพแล้ว")
 			}()
 		},
 		Bind: []interface{}{

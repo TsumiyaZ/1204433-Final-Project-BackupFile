@@ -15,11 +15,10 @@ type embeddingJob struct {
 }
 
 type EmbeddingStatusUpdate struct {
-	PhotoID     uint     `json:"photoId"`
-	Status      string   `json:"status"`
-	Error       string   `json:"error"`
-	Description string   `json:"description"`
-	Tags        []string `json:"tags"`
+	PhotoID uint     `json:"photoId"`
+	Status  string   `json:"status"`
+	Error   string   `json:"error"`
+	Tags    []string `json:"tags"`
 }
 
 // EmbeddingQueue creates image embeddings and similarity-based tags outside the photo-move call.
@@ -199,22 +198,21 @@ func (q *EmbeddingQueue) process(ctx context.Context, job embeddingJob) {
 	for _, tag := range photo.Tags {
 		tags = append(tags, tag.Name)
 	}
-	q.notifyResult(job, model.AnalysisStatusCompleted, "", photo.Description, tags)
+	q.notifyResult(job, model.AnalysisStatusCompleted, "", tags)
 }
 
 func (q *EmbeddingQueue) notify(job embeddingJob, status string, message string) {
-	q.notifyResult(job, status, message, "", nil)
+	q.notifyResult(job, status, message, nil)
 }
 
-func (q *EmbeddingQueue) notifyResult(job embeddingJob, status string, message string, description string, tags []string) {
+func (q *EmbeddingQueue) notifyResult(job embeddingJob, status string, message string, tags []string) {
 	if q.onUpdate == nil {
 		return
 	}
 	q.onUpdate(EmbeddingStatusUpdate{
-		PhotoID:     job.photoID,
-		Status:      status,
-		Error:       message,
-		Description: description,
-		Tags:        tags,
+		PhotoID: job.photoID,
+		Status:  status,
+		Error:   message,
+		Tags:    tags,
 	})
 }

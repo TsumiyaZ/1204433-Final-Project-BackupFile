@@ -6,7 +6,6 @@ type GalleryPhoto struct {
 	Path           string   `json:"path"`
 	Size           int64    `json:"size"`
 	ModifiedAt     string   `json:"modifiedAt"`
-	Description    string   `json:"description"`
 	Status         string   `json:"status"`
 	AnalysisStatus string   `json:"analysisStatus"`
 	AnalysisError  string   `json:"analysisError"`

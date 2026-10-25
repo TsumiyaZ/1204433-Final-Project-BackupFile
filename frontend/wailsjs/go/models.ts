@@ -6,7 +6,6 @@ export namespace dto {
 	    path: string;
 	    size: number;
 	    modifiedAt: string;
-	    description: string;
 	    status: string;
 	    analysisStatus: string;
 	    analysisError: string;
@@ -23,7 +22,6 @@ export namespace dto {
 	        this.path = source["path"];
 	        this.size = source["size"];
 	        this.modifiedAt = source["modifiedAt"];
-	        this.description = source["description"];
 	        this.status = source["status"];
 	        this.analysisStatus = source["analysisStatus"];
 	        this.analysisError = source["analysisError"];

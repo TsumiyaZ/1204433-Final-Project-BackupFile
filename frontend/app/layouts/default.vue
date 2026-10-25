@@ -129,7 +129,7 @@
             <p v-if="modelFolderError" class="mt-2 break-words text-xs text-error" role="alert">{{ modelFolderError }}</p>
           </section>
 
-          <p class="border-t border-base-300 pt-5 text-xs leading-5 text-base-content/55">ค้นหารูปด้วย EmbeddingGemma และสร้างคำบรรยายภาษาไทยด้วยโมเดลภาพในเครื่อง ผ่าน llama.cpp</p>
+          <p class="border-t border-base-300 pt-5 text-xs leading-5 text-base-content/55">สร้าง tag จาก embedding ของรูปด้วย EmbeddingGemma ผ่าน llama.cpp</p>
         </div>
       </aside>
     </dialog>

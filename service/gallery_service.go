@@ -282,7 +282,6 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 			Path:           path,
 			Size:           fileSize(info, status),
 			ModifiedAt:     fileModifiedAt(info, status),
-			Description:    photo.Description,
 			Status:         status,
 			AnalysisStatus: photo.AnalysisStatus,
 			AnalysisError:  photo.AnalysisError,

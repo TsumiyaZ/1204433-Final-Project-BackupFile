@@ -141,7 +141,6 @@
         </div>
         <div class="photo-tile-body">
           <h2 :title="photo.filename">{{ photo.filename }}</h2>
-          <p class="photo-description">{{ photo.description || "กำลังสร้างคำอธิบาย..." }}</p>
           <div v-if="photo.tags?.length" class="photo-tag-list" aria-label="แท็กของรูปภาพ">
             <span v-for="tag in photo.tags" :key="tag" class="photo-tag">{{ tag }}</span>
           </div>
@@ -179,7 +178,6 @@
 
         <div class="photo-details-meta">
           <p class="break-all font-semibold">{{ selectedPhoto.filename }}</p>
-          <p class="mt-2 text-sm leading-6 text-base-content/80">{{ selectedPhoto.description || "ยังไม่มีคำอธิบาย" }}</p>
           <div v-if="selectedPhoto.tags?.length" class="photo-tag-list mt-3" aria-label="แท็กของรูปภาพ">
             <span v-for="tag in selectedPhoto.tags" :key="tag" class="photo-tag">{{ tag }}</span>
           </div>
@@ -301,7 +299,6 @@ type EmbeddingStatusUpdate = {
   photoId: number;
   status: string;
   error: string;
-  description?: string;
   tags?: string[];
 };
 
@@ -482,7 +479,6 @@ function onEmbeddingStatus(update: EmbeddingStatusUpdate) {
   photo.analysisStatus = update.status;
   photo.analysisError = update.error;
   if (update.status === "completed") {
-    photo.description = update.description ?? photo.description;
     photo.tags = update.tags ?? photo.tags;
     void loadCompletedPreview(photo);
     void GetGalleryTagCloud().then((items) => { tagCloud.value = items; });
@@ -999,17 +995,6 @@ onBeforeUnmount(() => {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.photo-description {
-  display: -webkit-box;
-  overflow: hidden;
-  margin-top: 5px;
-  color: color-mix(in srgb, var(--color-base-content) 76%, transparent);
-  font-size: 0.75rem;
-  line-height: 1.4;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .photo-tag-list {

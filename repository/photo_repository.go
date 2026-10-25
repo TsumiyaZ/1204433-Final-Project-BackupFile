@@ -31,7 +31,7 @@ type PhotoRepository interface {
 		message string,
 	) error
 	GetPhotosNeedingAnalysis(ctx context.Context, dest string) ([]*model.Photo, error)
-	SavePhotoAnalysis(ctx context.Context, id uint, dest string, embedding []byte, modelName string, description string, tags []string) error
+	SavePhotoAnalysis(ctx context.Context, id uint, dest string, embedding []byte, modelName string, tags []string) error
 }
 
 func NewPhotoRepository(db *gorm.DB) PhotoRepository {
@@ -93,11 +93,11 @@ func (r *photoRepository) UpdatePhotoEmbedding(
 
 func (r *photoRepository) GetPhotosNeedingAnalysis(ctx context.Context, dest string) ([]*model.Photo, error) {
 	photos := make([]*model.Photo, 0)
-	err := r.db.WithContext(ctx).Where("dest = ? AND status = ? AND (analysis_status IN ? OR description IS NULL OR trim(description) = '' OR NOT EXISTS (SELECT 1 FROM photo_tags WHERE photo_tags.photo_id = photos.id))", dest, "active", []string{model.AnalysisStatusPending, model.AnalysisStatusProcessing}).Find(&photos).Error
+	err := r.db.WithContext(ctx).Where("dest = ? AND status = ? AND (analysis_status IN ? OR NOT EXISTS (SELECT 1 FROM photo_tags WHERE photo_tags.photo_id = photos.id))", dest, "active", []string{model.AnalysisStatusPending, model.AnalysisStatusProcessing}).Find(&photos).Error
 	return photos, err
 }
 
-func (r *photoRepository) SavePhotoAnalysis(ctx context.Context, id uint, dest string, embedding []byte, modelName string, description string, tags []string) error {
+func (r *photoRepository) SavePhotoAnalysis(ctx context.Context, id uint, dest string, embedding []byte, modelName string, tags []string) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		if err := tx.Exec("DELETE FROM photo_tags WHERE photo_id = ?", id).Error; err != nil {
 			return err
@@ -117,7 +117,6 @@ func (r *photoRepository) SavePhotoAnalysis(ctx context.Context, id uint, dest s
 		return tx.Model(&model.Photo{}).Where("id = ? AND dest = ?", id, dest).Updates(map[string]interface{}{
 			"embedding":       embedding,
 			"embedding_model": modelName,
-			"description":     description,
 			"analysis_status": model.AnalysisStatusCompleted,
 			"analysis_error":  "",
 		}).Error
