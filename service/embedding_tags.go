@@ -39,7 +39,7 @@ var tagConcepts = []tagConcept{
 	{"an outdoor scene", "กลางแจ้ง"}, {"a landscape", "ทิวทัศน์"},
 }
 
-const minimumTagSimilarity = 0.28
+const minimumTagSimilarity = 0.65
 const maximumPhotoTags = 5
 
 func (s *photoService) tagsFromEmbedding(ctx context.Context, imageVector []float32) ([]string, error) {

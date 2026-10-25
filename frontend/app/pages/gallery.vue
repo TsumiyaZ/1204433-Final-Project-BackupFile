@@ -39,13 +39,13 @@
       </div>
 
       <div class="gallery-filter-row" aria-label="ตัวกรองรูปภาพ">
-        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'all' }" :aria-pressed="activeFilter === 'all'" @click="activeFilter = 'all'">
+        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'all' }" :aria-pressed="activeFilter === 'all'" @click="selectPhotoFilter('all')">
           ทั้งหมด <span>{{ readyPhotos.length }}</span>
         </button>
-        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'waiting' }" :aria-pressed="activeFilter === 'waiting'" @click="activeFilter = 'waiting'">
+        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'waiting' }" :aria-pressed="activeFilter === 'waiting'" @click="selectPhotoFilter('waiting')">
           กำลังจัดทำดัชนี <span>{{ pendingPhotoCount + processingPhotoCount }}</span>
         </button>
-        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'failed' }" :aria-pressed="activeFilter === 'failed'" @click="activeFilter = 'failed'">
+        <button type="button" class="filter-chip" :class="{ 'filter-chip-active': activeFilter === 'failed' }" :aria-pressed="activeFilter === 'failed'" @click="selectPhotoFilter('failed')">
           ต้องตรวจสอบ <span>{{ failedPhotoCount }}</span>
         </button>
       </div>
@@ -60,20 +60,29 @@
       <div class="tag-cloud-heading">
         <div>
           <h2 id="tag-cloud-title">Tag Cloud</h2>
-          <p>แท็กที่พบในคลังรูปภาพปลายทาง</p>
+          <p>คลิกแท็กเพื่อดูรูปที่มีหมวดหมู่นั้น</p>
         </div>
-        <span v-if="tagCloud.length" class="tag-cloud-total">{{ tagCloud.length }} แท็ก</span>
+        <div class="tag-cloud-heading-actions">
+          <span v-if="tagCloud.length" class="tag-cloud-total">{{ tagCloud.length }} แท็ก</span>
+          <button v-if="selectedTag" type="button" class="tag-filter-clear" @click="clearSelectedTag">
+            ล้างตัวกรอง
+          </button>
+        </div>
       </div>
-      <div v-if="tagCloud.length" class="tag-cloud-list" aria-label="แท็กในคลังรูปภาพ">
-        <span
+      <div v-if="tagCloud.length" class="tag-cloud-list" role="group" aria-label="เลือกหมวดหมู่รูปภาพ">
+        <button
           v-for="tag in tagCloud"
           :key="tag.name"
           class="tag-cloud-chip"
+          :class="{ 'tag-cloud-chip-selected': selectedTag === tag.name }"
+          type="button"
+          :aria-pressed="selectedTag === tag.name"
           :style="{ fontSize: `${tagFontSize(tag.photoCount)}px` }"
-          :title="`${tag.photoCount} รูป`"
+          :title="`แสดงรูป ${tag.photoCount} รูปที่มีแท็ก ${tag.name}`"
+          @click="toggleSelectedTag(tag.name)"
         >
           {{ tag.name }} <span>{{ tag.photoCount }}</span>
-        </span>
+        </button>
       </div>
       <p v-else class="tag-cloud-empty">ยังไม่มีแท็กในคลังนี้</p>
     </section>
@@ -122,7 +131,12 @@
       </template>
     </section>
     <div v-else-if="displayedPhotos.length === 0" class="gallery-message">
-      <p class="font-semibold">{{ hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ยังไม่มีรูปที่วิเคราะห์เสร็จ" }}</p>
+      <p class="font-semibold">
+        {{ selectedTag
+          ? `ไม่พบรูปที่มีแท็ก “${selectedTag}”${hasSearched && searchText.trim() ? ` และตรงกับ “${searchText}”` : ""}`
+          : hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ยังไม่มีรูปที่วิเคราะห์เสร็จ" }}
+      </p>
+      <button v-if="selectedTag" type="button" class="btn btn-sm btn-outline" @click="clearSelectedTag">ล้างตัวกรองแท็ก</button>
       <p v-if="pendingPhotoCount || processingPhotoCount">รูปจะแสดงใน Gallery เมื่อวิเคราะห์และสร้างแท็กเสร็จ</p>
       <p v-if="failedPhotoCount" class="text-error">มี {{ failedPhotoCount }} รูปที่วิเคราะห์ไม่สำเร็จ กรุณารีเฟรชเพื่อตรวจสอบสถานะ</p>
       <button v-if="searchText" type="button" class="btn btn-sm btn-outline" @click="clearSearch">ล้างคำค้นหา</button>
@@ -323,6 +337,7 @@ const deleteAllError = ref("");
 const queuePaused = ref(false);
 const queueActionPending = ref(false);
 const activeFilter = ref<"all" | "waiting" | "failed">("all");
+const selectedTag = ref<string | null>(null);
 
 const searchText = ref("");
 const searchResults = ref<dto.PhotoSearchResult[]>([]);
@@ -459,8 +474,24 @@ const searchMatchedPhotos = computed(() => {
 });
 
 const displayedPhotos = computed(() =>
-  activeFilter.value === "all" ? searchMatchedPhotos.value : [],
+  activeFilter.value === "all"
+    ? searchMatchedPhotos.value.filter((photo) => !selectedTag.value || photo.tags?.includes(selectedTag.value))
+    : [],
 );
+
+function toggleSelectedTag(tagName: string) {
+  selectedTag.value = selectedTag.value === tagName ? null : tagName;
+  activeFilter.value = "all";
+}
+
+function selectPhotoFilter(filter: "all" | "waiting" | "failed") {
+  activeFilter.value = filter;
+  if (filter !== "all") selectedTag.value = null;
+}
+
+function clearSelectedTag() {
+  selectedTag.value = null;
+}
 
 async function loadCompletedPreview(photo: dto.GalleryPhoto) {
   if (photo.status !== "active" || previewUrls.value[photo.id]) return;
@@ -703,6 +734,12 @@ onBeforeUnmount(() => {
   gap: 12px;
 }
 
+.tag-cloud-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .tag-cloud-heading h2 { font-size: 0.95rem; font-weight: 700; }
 .tag-cloud-heading p,
 .tag-cloud-empty {
@@ -723,6 +760,7 @@ onBeforeUnmount(() => {
 }
 .tag-cloud-chip {
   display: inline-flex;
+  min-height: 36px;
   align-items: baseline;
   gap: 6px;
   border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
@@ -731,6 +769,33 @@ onBeforeUnmount(() => {
   padding: 5px 10px;
   color: var(--color-base-content);
   line-height: 1.2;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.tag-cloud-chip:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 62%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+.tag-cloud-chip:focus-visible,
+.tag-filter-clear:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.tag-cloud-chip-selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+}
+.tag-cloud-chip-selected span {
+  color: inherit;
+  opacity: 0.8;
+}
+.tag-filter-clear {
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .tag-cloud-chip span {
   color: var(--color-primary);
