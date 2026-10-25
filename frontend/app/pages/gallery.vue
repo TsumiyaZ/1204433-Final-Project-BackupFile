@@ -56,6 +56,28 @@
       <p v-if="searchError" role="alert" class="mt-2 text-sm text-error">{{ searchError }}</p>
     </header>
 
+    <section class="tag-cloud-panel" aria-labelledby="tag-cloud-title">
+      <div class="tag-cloud-heading">
+        <div>
+          <h2 id="tag-cloud-title">Tag Cloud</h2>
+          <p>แท็กที่พบในคลังรูปภาพปลายทาง</p>
+        </div>
+        <span v-if="tagCloud.length" class="tag-cloud-total">{{ tagCloud.length }} แท็ก</span>
+      </div>
+      <div v-if="tagCloud.length" class="tag-cloud-list" aria-label="แท็กในคลังรูปภาพ">
+        <span
+          v-for="tag in tagCloud"
+          :key="tag.name"
+          class="tag-cloud-chip"
+          :style="{ fontSize: `${tagFontSize(tag.photoCount)}px` }"
+          :title="`${tag.photoCount} รูป`"
+        >
+          {{ tag.name }} <span>{{ tag.photoCount }}</span>
+        </span>
+      </div>
+      <p v-else class="tag-cloud-empty">ยังไม่มีแท็กในคลังนี้</p>
+    </section>
+
     <section v-if="photos.length > 0 && !loading && !errMessage" class="gallery-toolbar" aria-label="จัดการคลังรูปภาพ">
       <p class="text-sm text-base-content/65" aria-live="polite">
         <template v-if="activeFilter === 'all'">{{ displayedPhotos.length }} รูปภาพ</template>
@@ -88,21 +110,21 @@
         <div v-if="waitingPhotos.length === 0" class="gallery-message">ไม่มีรูปที่รอจัดทำดัชนี</div>
         <article v-for="photo in waitingPhotos" :key="photo.id" class="status-row">
           <span class="status-dot status-dot-waiting" aria-hidden="true" />
-          <div class="min-w-0 flex-1"><p class="truncate font-medium">{{ photo.filename }}</p><p class="mt-1 text-xs text-base-content/60">{{ photo.analysisStatus === 'processing' ? 'กำลังสร้าง Embedding' : 'รอสร้าง Embedding' }}</p></div>
+          <div class="min-w-0 flex-1"><p class="truncate font-medium">{{ photo.filename }}</p><p class="mt-1 text-xs text-base-content/60">{{ photo.analysisStatus === 'processing' ? 'กำลังวิเคราะห์ภาพและสร้างแท็ก' : 'รอวิเคราะห์ภาพ' }}</p></div>
         </article>
       </template>
       <template v-else>
         <div v-if="failedPhotos.length === 0" class="gallery-message">ไม่มีรูปที่ต้องตรวจสอบ</div>
         <article v-for="photo in failedPhotos" :key="photo.id" class="status-row">
           <span class="status-dot status-dot-failed" aria-hidden="true" />
-          <div class="min-w-0 flex-1"><p class="truncate font-medium">{{ photo.filename }}</p><p class="mt-1 break-words text-xs text-error">{{ photo.analysisError || 'สร้าง Embedding ไม่สำเร็จ' }}</p></div>
+          <div class="min-w-0 flex-1"><p class="truncate font-medium">{{ photo.filename }}</p><p class="mt-1 break-words text-xs text-error">{{ photo.analysisError || 'วิเคราะห์รูปไม่สำเร็จ' }}</p></div>
         </article>
       </template>
     </section>
     <div v-else-if="displayedPhotos.length === 0" class="gallery-message">
-      <p class="font-semibold">{{ hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ยังไม่มีรูปที่สร้าง Embedding เสร็จ" }}</p>
-      <p v-if="pendingPhotoCount || processingPhotoCount">รูปจะแสดงใน Gallery เมื่อสร้าง Embedding เสร็จ</p>
-      <p v-if="failedPhotoCount" class="text-error">มี {{ failedPhotoCount }} รูปที่สร้าง Embedding ไม่สำเร็จ กรุณารีเฟรชเพื่อตรวจสอบสถานะ</p>
+      <p class="font-semibold">{{ hasSearched && searchText.trim() ? `ไม่พบรูปที่ตรงกับ “${searchText}”` : "ยังไม่มีรูปที่วิเคราะห์เสร็จ" }}</p>
+      <p v-if="pendingPhotoCount || processingPhotoCount">รูปจะแสดงใน Gallery เมื่อวิเคราะห์และสร้างแท็กเสร็จ</p>
+      <p v-if="failedPhotoCount" class="text-error">มี {{ failedPhotoCount }} รูปที่วิเคราะห์ไม่สำเร็จ กรุณารีเฟรชเพื่อตรวจสอบสถานะ</p>
       <button v-if="searchText" type="button" class="btn btn-sm btn-outline" @click="clearSearch">ล้างคำค้นหา</button>
     </div>
 
@@ -119,6 +141,10 @@
         </div>
         <div class="photo-tile-body">
           <h2 :title="photo.filename">{{ photo.filename }}</h2>
+          <p class="photo-description">{{ photo.description || "กำลังสร้างคำอธิบาย..." }}</p>
+          <div v-if="photo.tags?.length" class="photo-tag-list" aria-label="แท็กของรูปภาพ">
+            <span v-for="tag in photo.tags" :key="tag" class="photo-tag">{{ tag }}</span>
+          </div>
           <p class="file-state" :class="{ 'file-missing': photo.status !== 'active' }">
             {{ photo.status === "active" ? "ไฟล์พร้อมใช้งาน" : "ไม่พบไฟล์ในโฟลเดอร์" }}
           </p>
@@ -153,6 +179,10 @@
 
         <div class="photo-details-meta">
           <p class="break-all font-semibold">{{ selectedPhoto.filename }}</p>
+          <p class="mt-2 text-sm leading-6 text-base-content/80">{{ selectedPhoto.description || "ยังไม่มีคำอธิบาย" }}</p>
+          <div v-if="selectedPhoto.tags?.length" class="photo-tag-list mt-3" aria-label="แท็กของรูปภาพ">
+            <span v-for="tag in selectedPhoto.tags" :key="tag" class="photo-tag">{{ tag }}</span>
+          </div>
           <p class="mt-1 break-all text-xs leading-5 text-base-content/60">{{ selectedPhoto.path }}</p>
           <p class="mt-2 text-xs text-base-content/65">
             {{ selectedPhoto.filename.split('.').pop()?.toUpperCase() }}
@@ -187,7 +217,7 @@
       <div class="flex items-center gap-2.5">
         <div class="min-w-0 flex-1">
           <div class="mb-1 flex items-center justify-between gap-2 text-xs">
-            <span class="truncate font-semibold">Embedding · {{ embeddingProgress.finished }}/{{ embeddingProgress.total }}</span>
+            <span class="truncate font-semibold">วิเคราะห์รูป · {{ embeddingProgress.finished }}/{{ embeddingProgress.total }}</span>
             <span class="shrink-0 text-[11px] text-neutral-content/65">{{ embeddingProgress.percent }}%</span>
           </div>
           <progress
@@ -259,6 +289,7 @@ import {
   ShowGalleryPhotoInFolder,
   DeleteGalleryPhoto,
   SearchGalleryPhotos,
+  GetGalleryTagCloud,
   PauseEmbeddingQueue,
   ResumeEmbeddingQueue,
   IsEmbeddingQueuePaused,
@@ -270,9 +301,12 @@ type EmbeddingStatusUpdate = {
   photoId: number;
   status: string;
   error: string;
+  description?: string;
+  tags?: string[];
 };
 
 const photos = ref<dto.GalleryPhoto[]>([]);
+const tagCloud = ref<dto.TagCloudItem[]>([]);
 const loading = ref(true);
 const errMessage = ref("");
 const previewUrls = ref<Record<number, string>>({});
@@ -317,6 +351,15 @@ const failedPhotoCount = computed(() =>
 const failedPhotos = computed(() =>
   photos.value.filter((photo) => photo.analysisStatus === "failed"),
 );
+const tagCountRange = computed(() => ({
+  min: Math.min(...tagCloud.value.map((tag) => tag.photoCount)),
+  max: Math.max(...tagCloud.value.map((tag) => tag.photoCount)),
+}));
+function tagFontSize(count: number) {
+  const { min, max } = tagCountRange.value;
+  if (!Number.isFinite(min) || max <= min) return 14;
+  return Math.round(13 + ((count - min) / (max - min)) * 9);
+}
 const waitingPhotos = computed(() =>
   photos.value.filter((photo) => photo.analysisStatus === "pending" || photo.analysisStatus === "processing"),
 );
@@ -438,7 +481,12 @@ function onEmbeddingStatus(update: EmbeddingStatusUpdate) {
 
   photo.analysisStatus = update.status;
   photo.analysisError = update.error;
-  if (update.status === "completed") void loadCompletedPreview(photo);
+  if (update.status === "completed") {
+    photo.description = update.description ?? photo.description;
+    photo.tags = update.tags ?? photo.tags;
+    void loadCompletedPreview(photo);
+    void GetGalleryTagCloud().then((items) => { tagCloud.value = items; });
+  }
 }
 
 async function loadPhotos() {
@@ -447,6 +495,7 @@ async function loadPhotos() {
 
   try {
     photos.value = await GetGalleryPhotos();
+    tagCloud.value = await GetGalleryTagCloud();
 
     previewUrls.value = {};
     await loadPreviews(readyPhotos.value);
@@ -642,6 +691,57 @@ onBeforeUnmount(() => {
   padding-bottom: 18px;
   border-bottom: 1px solid color-mix(in srgb, var(--color-base-content) 12%, transparent);
 }
+
+.tag-cloud-panel {
+  margin-top: 18px;
+  border: 1px solid var(--color-base-300);
+  border-radius: 14px;
+  background: var(--color-base-100);
+  padding: 16px 18px;
+}
+
+.tag-cloud-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tag-cloud-heading h2 { font-size: 0.95rem; font-weight: 700; }
+.tag-cloud-heading p,
+.tag-cloud-empty {
+  margin-top: 3px;
+  color: color-mix(in srgb, var(--color-base-content) 62%, transparent);
+  font-size: 0.75rem;
+}
+.tag-cloud-total {
+  color: color-mix(in srgb, var(--color-base-content) 58%, transparent);
+  font-size: 0.75rem;
+}
+.tag-cloud-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 9px 11px;
+  margin-top: 14px;
+}
+.tag-cloud-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 9%, transparent);
+  padding: 5px 10px;
+  color: var(--color-base-content);
+  line-height: 1.2;
+}
+.tag-cloud-chip span {
+  color: var(--color-primary);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+}
+.tag-cloud-empty { margin-top: 14px; }
 
 .gallery-search-row {
   display: flex;
@@ -899,6 +999,34 @@ onBeforeUnmount(() => {
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.photo-description {
+  display: -webkit-box;
+  overflow: hidden;
+  margin-top: 5px;
+  color: color-mix(in srgb, var(--color-base-content) 76%, transparent);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.photo-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.photo-tag {
+  border: 1px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+  padding: 3px 7px;
+  color: color-mix(in srgb, var(--color-base-content) 90%, transparent);
+  font-size: 0.68rem;
+  line-height: 1.25;
 }
 
 .file-state {

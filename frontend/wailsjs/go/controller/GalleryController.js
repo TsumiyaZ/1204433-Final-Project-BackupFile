@@ -18,6 +18,10 @@ export function GetGalleryPhotos() {
   return window['go']['controller']['GalleryController']['GetGalleryPhotos']();
 }
 
+export function GetGalleryTagCloud() {
+  return window['go']['controller']['GalleryController']['GetGalleryTagCloud']();
+}
+
 export function IsEmbeddingQueuePaused() {
   return window['go']['controller']['GalleryController']['IsEmbeddingQueuePaused']();
 }

@@ -104,16 +104,9 @@ type imageInput struct {
 }
 
 func StartServer(ctx context.Context, onStatus func(SetupProgress)) error {
-	executablePath, err := ResolveServerPath()
+	executablePath, err := resolveOrInstallServer(ctx, onStatus)
 	if err != nil {
-		if strings.TrimSpace(os.Getenv("LLAMA_SERVER_PATH")) != "" {
-			return err
-		}
-		reportSetupProgress(onStatus, SetupProgress{Message: "ยังไม่พบ llama.cpp กำลังดาวน์โหลดส่วนประกอบที่จำเป็น..."})
-		executablePath, err = installServer(ctx, onStatus)
-		if err != nil {
-			return fmt.Errorf("cannot prepare llama.cpp runtime: %w", err)
-		}
+		return fmt.Errorf("cannot prepare llama.cpp runtime: %w", err)
 	}
 
 	modelPath, mmprojPath, err := ensureEmbeddingModel(ctx, onStatus)
@@ -158,6 +151,22 @@ func StartServer(ctx context.Context, onStatus func(SetupProgress)) error {
 	}()
 
 	return nil
+}
+
+func resolveOrInstallServer(ctx context.Context, onStatus func(SetupProgress)) (string, error) {
+	executablePath, err := ResolveServerPath()
+	if err == nil {
+		return executablePath, nil
+	}
+	if strings.TrimSpace(os.Getenv("LLAMA_SERVER_PATH")) != "" {
+		return "", err
+	}
+	reportSetupProgress(onStatus, SetupProgress{Message: "ยังไม่พบ llama.cpp กำลังดาวน์โหลดส่วนประกอบที่จำเป็น..."})
+	executablePath, err = installServer(ctx, onStatus)
+	if err != nil {
+		return "", err
+	}
+	return executablePath, nil
 }
 
 func openServerLog() *os.File {

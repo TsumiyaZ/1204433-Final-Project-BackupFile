@@ -15,12 +15,14 @@ type embeddingJob struct {
 }
 
 type EmbeddingStatusUpdate struct {
-	PhotoID uint   `json:"photoId"`
-	Status  string `json:"status"`
-	Error   string `json:"error"`
+	PhotoID     uint     `json:"photoId"`
+	Status      string   `json:"status"`
+	Error       string   `json:"error"`
+	Description string   `json:"description"`
+	Tags        []string `json:"tags"`
 }
 
-// EmbeddingQueue performs image embedding work outside the photo-move call.
+// EmbeddingQueue creates image embeddings and similarity-based tags outside the photo-move call.
 type EmbeddingQueue struct {
 	photoRepo    repository.PhotoRepository
 	settingRepo  repository.SettingRepository
@@ -60,15 +62,12 @@ func (q *EmbeddingQueue) Start(
 	}
 
 	if setting.Dest != "" {
-		photos, err := q.photoRepo.GetPhotosByDestination(ctx, setting.Dest)
+		photos, err := q.photoRepo.GetPhotosNeedingAnalysis(ctx, setting.Dest)
 		if err != nil {
 			return err
 		}
 		for _, photo := range photos {
-			if photo.AnalysisStatus == model.AnalysisStatusPending ||
-				photo.AnalysisStatus == model.AnalysisStatusProcessing {
-				q.Enqueue(photo.ID, photo.Dest)
-			}
+			q.Enqueue(photo.ID, photo.Dest)
 		}
 	}
 
@@ -190,16 +189,32 @@ func (q *EmbeddingQueue) process(ctx context.Context, job embeddingJob) {
 		q.notify(job, model.AnalysisStatusFailed, err.Error())
 		return
 	}
-	q.notify(job, model.AnalysisStatusCompleted, "")
+	photo, err := q.photoRepo.GetPhotoByID(ctx, job.photoID, job.dest)
+	if err != nil {
+		log.Printf("cannot load completed photo %d: %v", job.photoID, err)
+		q.notify(job, model.AnalysisStatusCompleted, "")
+		return
+	}
+	tags := make([]string, 0, len(photo.Tags))
+	for _, tag := range photo.Tags {
+		tags = append(tags, tag.Name)
+	}
+	q.notifyResult(job, model.AnalysisStatusCompleted, "", photo.Description, tags)
 }
 
 func (q *EmbeddingQueue) notify(job embeddingJob, status string, message string) {
+	q.notifyResult(job, status, message, "", nil)
+}
+
+func (q *EmbeddingQueue) notifyResult(job embeddingJob, status string, message string, description string, tags []string) {
 	if q.onUpdate == nil {
 		return
 	}
 	q.onUpdate(EmbeddingStatusUpdate{
-		PhotoID: job.photoID,
-		Status:  status,
-		Error:   message,
+		PhotoID:     job.photoID,
+		Status:      status,
+		Error:       message,
+		Description: description,
+		Tags:        tags,
 	})
 }

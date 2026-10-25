@@ -15,6 +15,7 @@ import (
 
 type galleryService struct {
 	photoRepo    repository.PhotoRepository
+	tagRepo      repository.TagRepository
 	settingRepo  repository.SettingRepository
 	photoService PhotoService
 }
@@ -27,18 +28,35 @@ type GalleryService interface {
 	GenerateGalleryPhotoEmbedding(ctx context.Context, photoID uint) error
 	DeleteGalleryPhoto(ctx context.Context, photoID uint) error
 	SearchGalleryPhotos(ctx context.Context, text string) ([]dto.PhotoSearchResult, error)
+	GetGalleryTagCloud(ctx context.Context) ([]dto.TagCloudItem, error)
 }
 
 func NewGalleryService(
 	photoRepo repository.PhotoRepository,
 	settingRepo repository.SettingRepository,
 	photoService PhotoService,
+	tagRepos ...repository.TagRepository,
 ) GalleryService {
-	return &galleryService{
+	instance := &galleryService{
 		photoRepo:    photoRepo,
 		settingRepo:  settingRepo,
 		photoService: photoService,
 	}
+	if len(tagRepos) > 0 {
+		instance.tagRepo = tagRepos[0]
+	}
+	return instance
+}
+
+func (s *galleryService) GetGalleryTagCloud(ctx context.Context) ([]dto.TagCloudItem, error) {
+	setting, err := s.settingRepo.GetSetting(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if setting.Dest == "" || s.tagRepo == nil {
+		return []dto.TagCloudItem{}, nil
+	}
+	return s.tagRepo.GetTagCloud(ctx, setting.Dest)
 }
 
 func (s *galleryService) SearchGalleryPhotos(
@@ -268,11 +286,20 @@ func (s *galleryService) GetGalleryPhoto(ctx context.Context) ([]dto.GalleryPhot
 			Status:         status,
 			AnalysisStatus: photo.AnalysisStatus,
 			AnalysisError:  photo.AnalysisError,
+			Tags:           tagNames(photo.Tags),
 		})
 	}
 
 	return result, nil
 
+}
+
+func tagNames(tags []model.Tag) []string {
+	names := make([]string, 0, len(tags))
+	for _, tag := range tags {
+		names = append(names, tag.Name)
+	}
+	return names
 }
 
 func fileSize(info os.FileInfo, status string) int64 {

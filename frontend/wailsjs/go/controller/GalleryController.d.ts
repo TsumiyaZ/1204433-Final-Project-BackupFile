@@ -10,6 +10,8 @@ export function GetGalleryPhotoPreview(arg1:number):Promise<string>;
 
 export function GetGalleryPhotos():Promise<Array<dto.GalleryPhoto>>;
 
+export function GetGalleryTagCloud():Promise<Array<dto.TagCloudItem>>;
+
 export function IsEmbeddingQueuePaused():Promise<boolean>;
 
 export function OpenGalleryPhoto(arg1:number):Promise<void>;

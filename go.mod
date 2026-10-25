@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/glebarez/sqlite v1.11.0
-	github.com/wailsapp/wails/v2 v2.16.0
+	github.com/wailsapp/wails/v2 v2.13.0
 	golang.org/x/image v0.41.0
 	gorm.io/gen v0.3.29
 	gorm.io/gorm v1.31.2

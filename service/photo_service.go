@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"FinalProject/dto"
 	"FinalProject/repository"
@@ -20,8 +21,15 @@ const embeddingModelName = "embeddinggemma-2"
 const minimumSearchScore = 0.65
 
 type photoService struct {
-	repo   repository.PhotoRepository
-	engine EmbeddingEngine
+	repo       repository.PhotoRepository
+	engine     EmbeddingEngine
+	describer  PhotoDescriber
+	tagMu      sync.Mutex
+	tagVectors map[string][]float32
+}
+
+type PhotoDescriber interface {
+	DescribeImage(ctx context.Context, imagePath string) (string, error)
 }
 
 type PhotoService interface {
@@ -37,11 +45,17 @@ type PhotoService interface {
 func NewPhotoService(
 	repo repository.PhotoRepository,
 	engine EmbeddingEngine,
+	describers ...PhotoDescriber,
 ) PhotoService {
-	return &photoService{
-		repo:   repo,
-		engine: engine,
+	instance := &photoService{
+		repo:       repo,
+		engine:     engine,
+		tagVectors: make(map[string][]float32),
 	}
+	if len(describers) > 0 {
+		instance.describer = describers[0]
+	}
+	return instance
 }
 
 func (s *photoService) SearchPhotos(
@@ -105,9 +119,15 @@ func (s *photoService) GeneratePhotoEmbedding(
 
 	imagePath := filepath.Join(photo.Dest, photo.Filename)
 
-	vector, err := s.engine.EmbedImage(ctx, imagePath)
-	if err != nil {
-		return fmt.Errorf("cannot create image embedding: %w", err)
+	var vector []float32
+	if photo.EmbeddingModel == embeddingModelName && len(photo.Embedding) > 0 {
+		vector, err = decodeEmbedding(photo.Embedding)
+	}
+	if len(vector) == 0 {
+		vector, err = s.engine.EmbedImage(ctx, imagePath)
+		if err != nil {
+			return fmt.Errorf("cannot create image embedding: %w", err)
+		}
 	}
 
 	embeddingBytes, err := encodeEmbedding(vector)
@@ -115,14 +135,27 @@ func (s *photoService) GeneratePhotoEmbedding(
 		return fmt.Errorf("cannot encode image embedding: %w", err)
 	}
 
-	if err := s.repo.UpdatePhotoEmbedding(
+	tags, err := s.tagsFromEmbedding(ctx, vector)
+	if err != nil {
+		return fmt.Errorf("cannot classify image embedding: %w", err)
+	}
+	if s.describer == nil {
+		return fmt.Errorf("image description model is unavailable")
+	}
+	description, err := s.describer.DescribeImage(ctx, imagePath)
+	if err != nil {
+		return fmt.Errorf("cannot generate image description: %w", err)
+	}
+	if err := s.repo.SavePhotoAnalysis(
 		ctx,
 		photo.ID,
 		photo.Dest,
 		embeddingBytes,
 		embeddingModelName,
+		description,
+		tags,
 	); err != nil {
-		return fmt.Errorf("cannot save image embedding: %w", err)
+		return fmt.Errorf("cannot save photo analysis: %w", err)
 	}
 
 	return nil

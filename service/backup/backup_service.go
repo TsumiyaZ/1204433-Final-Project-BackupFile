@@ -22,7 +22,7 @@ const defaultWorkerCount = 4
 type ProgressFunc func(progress dto.MoveProgress)
 
 // PhotoEmbeddingEnqueuer queues a photo after its file and database record
-// have been saved. The backup package does not depend on the embedding service.
+// have been saved. The backup package does not depend on the analysis service.
 type PhotoEmbeddingEnqueuer interface {
 	Enqueue(photoID uint, dest string)
 }

@@ -21,4 +21,5 @@ type Photo struct {
 	EmbeddingModel string
 	CreatedAt      time.Time
 	AnalysisError  string `gorm:"type:text"`
+	Tags           []Tag  `gorm:"many2many:photo_tags;foreignKey:ID;joinForeignKey:PhotoID;references:ID;joinReferences:TagID" json:"-"`
 }

@@ -10,6 +10,7 @@ export namespace dto {
 	    status: string;
 	    analysisStatus: string;
 	    analysisError: string;
+	    tags: string[];
 	
 	    static createFrom(source: any = {}) {
 	        return new GalleryPhoto(source);
@@ -26,6 +27,7 @@ export namespace dto {
 	        this.status = source["status"];
 	        this.analysisStatus = source["analysisStatus"];
 	        this.analysisError = source["analysisError"];
+	        this.tags = source["tags"];
 	    }
 	}
 	export class MoveItemResult {
@@ -134,6 +136,20 @@ export namespace dto {
 	        this.relativePath = source["relativePath"];
 	        this.extension = source["extension"];
 	        this.size = source["size"];
+	    }
+	}
+	export class TagCloudItem {
+	    name: string;
+	    photoCount: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new TagCloudItem(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.photoCount = source["photoCount"];
 	    }
 	}
 

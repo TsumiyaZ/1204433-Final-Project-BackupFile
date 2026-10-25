@@ -18,6 +18,7 @@ type modelAsset struct {
 	name   string
 	size   int64
 	sha256 string
+	url    string
 }
 
 var embeddingModelAssets = []modelAsset{
@@ -25,11 +26,30 @@ var embeddingModelAssets = []modelAsset{
 		name:   "embeddinggemma-2-Q8_0.gguf",
 		size:   309855456,
 		sha256: "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+		url:    "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/bfcd298762cc34d0357ece5ebdd31791a3a374d8/embeddinggemma-2-Q8_0.gguf",
 	},
 	{
 		name:   "mmproj-embeddinggemma-2-Q8_0.gguf",
 		size:   554821024,
 		sha256: "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+		url:    "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/bfcd298762cc34d0357ece5ebdd31791a3a374d8/mmproj-embeddinggemma-2-Q8_0.gguf",
+	},
+}
+
+const captionModelRevision = "5037fcf163dd95d1e41d1974465f0898ed108ca2"
+
+var captionModelAssets = []modelAsset{
+	{
+		name:   "Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+		size:   1929901056,
+		sha256: "d02fe9b69ad8cadbbd228e387667af66612c44bed29ffc8eb1e7caf9ac486c12",
+		url:    "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/" + captionModelRevision + "/Qwen2.5-VL-3B-Instruct-Q4_K_M.gguf",
+	},
+	{
+		name:   "mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
+		size:   844757728,
+		sha256: "980c9b2f78c04e6cff93d277ada09e768394f112d75db3b4e9dea8a69f9fb904",
+		url:    "https://huggingface.co/ggml-org/Qwen2.5-VL-3B-Instruct-GGUF/resolve/" + captionModelRevision + "/mmproj-Qwen2.5-VL-3B-Instruct-Q8_0.gguf",
 	},
 }
 
@@ -63,6 +83,38 @@ func ensureEmbeddingModel(ctx context.Context, onStatus func(SetupProgress)) (st
 			reportSetupProgress(onStatus, progress)
 		}
 		if err := ensureModelFile(ctx, path, asset, assetProgress); err != nil {
+			return "", "", err
+		}
+		completedSize += asset.size
+	}
+	return paths[0], paths[1], nil
+}
+
+func ensureCaptionModel(ctx context.Context, onStatus func(SetupProgress)) (string, string, error) {
+	modelDir, err := ModelDirectory()
+	if err != nil {
+		return "", "", fmt.Errorf("cannot locate local application data: %w", err)
+	}
+	if err := os.MkdirAll(modelDir, 0o755); err != nil {
+		return "", "", fmt.Errorf("cannot create model folder: %w", err)
+	}
+	paths := make([]string, len(captionModelAssets))
+	var totalSize int64
+	for _, asset := range captionModelAssets {
+		totalSize += asset.size
+	}
+	var completedSize int64
+	for i, asset := range captionModelAssets {
+		path := filepath.Join(modelDir, asset.name)
+		paths[i] = path
+		progress := func(update SetupProgress) {
+			if update.Determinate && totalSize > 0 {
+				currentSize := asset.size * int64(update.Percent) / 100
+				update.Percent = int((completedSize + currentSize) * 100 / totalSize)
+			}
+			reportSetupProgress(onStatus, update)
+		}
+		if err := ensureModelFile(ctx, path, asset, progress); err != nil {
 			return "", "", err
 		}
 		completedSize += asset.size
@@ -116,7 +168,7 @@ func validModelFile(path, expectedSHA256 string) bool {
 }
 
 func downloadModelFile(ctx context.Context, partialPath string, asset modelAsset, onStatus func(SetupProgress)) error {
-	url := "https://huggingface.co/ggml-org/embeddinggemma-2-GGUF/resolve/" + embeddingModelRevision + "/" + asset.name
+	url := asset.url
 	client := &http.Client{Timeout: 45 * time.Minute}
 
 	var offset int64
