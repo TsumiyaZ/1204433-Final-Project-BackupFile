@@ -17,4 +17,13 @@ to this in your browser, and you can call your Go code from devtools.
 ## Building
 
 To build a redistributable, production mode package, use `wails build`.
-"# 1204433-Final-Project-BackupFile" 
+
+## Downloads
+
+Download the latest version for your platform:
+
+[![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D4?logo=windows&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/FinalProject.exe)
+
+[![Download for macOS](https://img.shields.io/badge/Download-macOS-555555?logo=apple&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/PhotoBackup-macOS-universal.zip)
+
+The first launch needs an internet connection to download the local image-search model.
