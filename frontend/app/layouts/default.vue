@@ -1,5 +1,5 @@
 <template>
-  <div data-theme="photo-dark" class="min-h-dvh bg-base-200 text-base-content">
+  <div data-theme="photo-cream" class="min-h-dvh bg-base-200 text-base-content">
     <header
       class="sticky top-0 z-40 border-b border-base-300 bg-base-100/95 backdrop-blur"
     >

@@ -1,29 +1,41 @@
-# README
+# Photo Backup
 
-## About
+แอปเดสก์ท็อปสำหรับจัดเก็บและค้นหารูปภาพ ใช้ EmbeddingGemma กับ llama.cpp เพื่อค้นหารูปจากข้อความ โดยประมวลผลบนเครื่องของคุณ
 
-This is the official Wails Vanilla template.
+## ดาวน์โหลด
 
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+เลือกดาวน์โหลดตามระบบปฏิบัติการ:
 
-## Live Development
+[![ดาวน์โหลดสำหรับ Windows](https://img.shields.io/badge/ดาวน์โหลด-Windows-0078D4?logo=windows&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/FinalProject.exe)
 
-To run in live development mode, run `wails dev` in the project directory. This will run a Vite development
-server that will provide very fast hot reload of your frontend changes. If you want to develop in a browser
-and have access to your Go methods, there is also a dev server that runs on http://localhost:34115. Connect
-to this in your browser, and you can call your Go code from devtools.
+[![ดาวน์โหลดสำหรับ macOS](https://img.shields.io/badge/ดาวน์โหลด-macOS-555555?logo=apple&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/PhotoBackup-macOS-universal.zip)
 
-## Building
+แอป macOS รองรับทั้ง Apple Silicon และ Intel
 
-To build a redistributable, production mode package, use `wails build`.
+## เริ่มต้นใช้งาน
 
-## Downloads
+1. ดาวน์โหลดไฟล์สำหรับระบบปฏิบัติการของคุณจากด้านบน
+2. เปิดแอปและตั้งค่าโฟลเดอร์ต้นทางกับโฟลเดอร์ปลายทาง
+3. เมื่อเปิดครั้งแรก แอปจะดาวน์โหลด llama.cpp และโมเดลสำหรับค้นหารูป ต้องเชื่อมต่ออินเทอร์เน็ตและมีพื้นที่ว่างในเครื่อง
+4. เมื่อติดตั้งโมเดลเสร็จแล้ว การสร้าง embedding และค้นหารูปจะทำงานในเครื่อง
 
-Download the latest version for your platform:
+บน macOS อาจมีข้อความเตือนความปลอดภัยเพราะแอปยังไม่ได้เซ็นรับรองโดย Apple
 
-[![Download for Windows](https://img.shields.io/badge/Download-Windows-0078D4?logo=windows&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/FinalProject.exe)
+## ความสามารถ
 
-[![Download for macOS](https://img.shields.io/badge/Download-macOS-555555?logo=apple&logoColor=white)](https://github.com/TsumiyaZ/1204433-Final-Project-BackupFile/releases/latest/download/PhotoBackup-macOS-universal.zip)
+- สแกนและย้ายรูปภาพไปยังโฟลเดอร์จัดเก็บ
+- ตรวจหารูปซ้ำด้วย checksum
+- สร้าง embedding เบื้องหลัง พร้อมแสดงความคืบหน้า
+- ค้นหารูปด้วยข้อความและเลือกดูตามแท็ก
+- เก็บฐานข้อมูลและโมเดลไว้ในเครื่อง
 
-The first launch needs an internet connection to download the local image-search model.
+## สำหรับนักพัฒนา
+
+ต้องติดตั้ง Go ตามเวอร์ชันใน `go.mod`, Node.js และ npm รวมถึง Wails CLI v2.16.0
+
+```bash
+wails dev
+wails build
+```
+
+GitHub Actions จะ build Windows และ macOS เมื่อมีการ push tag เวอร์ชันที่ขึ้นต้นด้วย `v` เช่น `v1.0.0` แล้วสร้าง GitHub Release พร้อมไฟล์ดาวน์โหลดให้อัตโนมัติ

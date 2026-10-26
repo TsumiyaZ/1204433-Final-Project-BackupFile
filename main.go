@@ -69,7 +69,7 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
+		BackgroundColour: &options.RGBA{R: 247, G: 241, B: 231, A: 255},
 		OnStartup: func(ctx context.Context) {
 			app.startup(ctx)
 			controller.SetBackupContext(backupController, ctx)

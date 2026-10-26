@@ -71,7 +71,7 @@ func (b *moveBatch) moveOne(ctx context.Context, rawPath string) dto.MoveItemRes
 		return item
 	}
 
-	filename, duplicate, err := b.reserve(ctx, checksum, filepath.Base(sourcePath))
+	filename, existingPhoto, duplicate, err := b.reserve(ctx, checksum, filepath.Base(sourcePath))
 	if err != nil {
 		item.Message = err.Error()
 		return item
@@ -92,18 +92,28 @@ func (b *moveBatch) moveOne(ctx context.Context, rawPath string) dto.MoveItemRes
 		return item
 	}
 
-	photo := &model.Photo{
-		Dest:     b.dest,
-		Filename: filename,
-		Checksum: checksum,
+	photo := existingPhoto
+	needsAnalysis := true
+	if photo == nil {
+		photo = &model.Photo{
+			Dest:     b.dest,
+			Filename: filename,
+			Checksum: checksum,
+		}
+		if err := b.repo.CreatePhoto(ctx, photo); err != nil {
+			// The file is already safe in Destination. Report it so the
+			// integrity check can reconcile the missing record later.
+			item.Message = "photo moved but saving the record failed"
+			return item
+		}
+	} else {
+		needsAnalysis = photo.AnalysisStatus != model.AnalysisStatusCompleted || len(photo.Embedding) == 0
+		if err := b.repo.RestorePhoto(ctx, photo.ID, photo.Dest, needsAnalysis); err != nil {
+			item.Message = "photo restored but updating its database record failed"
+			return item
+		}
 	}
-	if err := b.repo.CreatePhoto(ctx, photo); err != nil {
-		// The file is already safe in Destination. Report it so the
-		// integrity check can reconcile the missing record later.
-		item.Message = "photo moved but saving the record failed"
-		return item
-	}
-	if b.embeddingQueue != nil {
+	if b.embeddingQueue != nil && needsAnalysis {
 		b.embeddingQueue.Enqueue(photo.ID, photo.Dest)
 	}
 
@@ -119,20 +129,55 @@ func (b *moveBatch) reserve(
 	ctx context.Context,
 	checksum string,
 	filename string,
-) (string, bool, error) {
+) (string, *model.Photo, bool, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if b.checksums[checksum] {
-		return "", true, nil
+		return "", nil, true, nil
 	}
 
-	exists, err := b.repo.ChecksumExists(ctx, b.dest, checksum)
+	trackedPhotos, err := b.repo.PhotosByChecksum(ctx, b.dest, checksum)
 	if err != nil {
-		return "", false, fmt.Errorf("cannot check duplicate photos")
+		return "", nil, false, fmt.Errorf("cannot check duplicate photos")
 	}
-	if exists {
-		return "", true, nil
+
+	var missingPhoto *model.Photo
+	for _, photo := range trackedPhotos {
+		if photo == nil {
+			continue
+		}
+		photoPath := filepath.Join(b.dest, photo.Filename)
+		info, statErr := os.Stat(photoPath)
+		if os.IsNotExist(statErr) {
+			if missingPhoto == nil {
+				missingPhoto = photo
+			}
+			continue
+		}
+		if statErr != nil {
+			return "", nil, false, fmt.Errorf("cannot check existing photo")
+		}
+		if !info.Mode().IsRegular() {
+			continue
+		}
+		existingChecksum, checksumErr := fileChecksum(photoPath)
+		if checksumErr != nil {
+			return "", nil, false, fmt.Errorf("cannot check existing photo")
+		}
+		if existingChecksum == checksum {
+			return "", nil, true, nil
+		}
+	}
+
+	if missingPhoto != nil {
+		key := pathutil.Key(missingPhoto.Filename)
+		if b.filenames[key] {
+			return "", nil, false, fmt.Errorf("cannot reserve filename for restored photo")
+		}
+		b.checksums[checksum] = true
+		b.filenames[key] = true
+		return missingPhoto.Filename, missingPhoto, false, nil
 	}
 
 	extension := filepath.Ext(filename)
@@ -154,16 +199,16 @@ func (b *moveBatch) reserve(
 			// A file not tracked in the database may still be the same photo.
 			existingChecksum, err := fileChecksum(candidatePath)
 			if err == nil && existingChecksum == checksum {
-				return "", true, nil
+				return "", nil, true, nil
 			}
 			continue
 		} else if !os.IsNotExist(err) {
-			return "", false, fmt.Errorf("cannot check destination file")
+			return "", nil, false, fmt.Errorf("cannot check destination file")
 		}
 
 		taken, err := b.repo.FilenameExists(ctx, b.dest, candidate)
 		if err != nil {
-			return "", false, fmt.Errorf("cannot check destination filename")
+			return "", nil, false, fmt.Errorf("cannot check destination filename")
 		}
 		if taken {
 			continue
@@ -172,10 +217,10 @@ func (b *moveBatch) reserve(
 		b.checksums[checksum] = true
 		b.filenames[key] = true
 
-		return candidate, false, nil
+		return candidate, nil, false, nil
 	}
 
-	return "", false, fmt.Errorf("cannot find a free filename in destination")
+	return "", nil, false, fmt.Errorf("cannot find a free filename in destination")
 }
 
 func (b *moveBatch) release(checksum string, filename string) {

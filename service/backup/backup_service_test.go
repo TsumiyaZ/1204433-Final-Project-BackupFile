@@ -40,9 +40,41 @@ func (r *fakeBackupRepo) FilenameExists(_ context.Context, dest string, filename
 	return false, nil
 }
 
+func (r *fakeBackupRepo) PhotosByChecksum(_ context.Context, dest string, checksum string) ([]*model.Photo, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	photos := make([]*model.Photo, 0)
+	for i := range r.photos {
+		if r.photos[i].Dest == dest && r.photos[i].Checksum == checksum {
+			photo := r.photos[i]
+			photos = append(photos, &photo)
+		}
+	}
+	return photos, nil
+}
+
+func (r *fakeBackupRepo) RestorePhoto(_ context.Context, id uint, dest string, needsAnalysis bool) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i := range r.photos {
+		if r.photos[i].ID == id && r.photos[i].Dest == dest {
+			r.photos[i].Status = "active"
+			if needsAnalysis {
+				r.photos[i].AnalysisStatus = model.AnalysisStatusPending
+				r.photos[i].AnalysisError = ""
+			}
+			return nil
+		}
+	}
+	return nil
+}
+
 func (r *fakeBackupRepo) CreatePhoto(_ context.Context, photo *model.Photo) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if photo.ID == 0 {
+		photo.ID = uint(len(r.photos) + 1)
+	}
 	r.photos = append(r.photos, *photo)
 	return nil
 }

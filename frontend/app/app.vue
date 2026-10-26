@@ -1,15 +1,16 @@
 <template>
   <main
     v-if="embeddingStatus.state !== 'ready'"
-    class="fixed inset-0 z-[100] grid place-items-center bg-base-200 px-6 py-10"
+    data-theme="photo-cream"
+    class="fixed inset-0 z-[100] grid place-items-center bg-base-200 px-5 py-8 sm:px-8"
     :role="embeddingStatus.state === 'error' ? 'alert' : 'status'"
     :aria-live="embeddingStatus.state === 'error' ? 'assertive' : 'polite'"
   >
     <section
-      class="w-full max-w-lg rounded-3xl border border-base-300 bg-base-100 px-8 py-10 text-center shadow-xl sm:px-12"
+      class="w-full max-w-lg rounded-[28px] border border-base-300 bg-base-100 px-6 py-8 text-center shadow-[0_20px_70px_rgba(91,64,48,0.12)] sm:px-12 sm:py-10"
     >
       <div
-        class="mx-auto mb-6 grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary"
+        class="mx-auto mb-5 grid size-16 place-items-center rounded-[20px] border border-primary/15 bg-primary/10 text-primary"
         aria-hidden="true"
       >
         <svg
@@ -26,6 +27,7 @@
         <span v-else class="loading loading-spinner loading-lg text-primary" />
       </div>
 
+      <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-primary/75">Photo Backup</p>
       <h1 class="text-2xl font-bold text-base-content">
         {{ embeddingStatus.state === "error" ? "เตรียมโมเดลไม่สำเร็จ" : "กำลังเตรียมโมเดลค้นหารูป" }}
       </h1>
@@ -34,12 +36,21 @@
         {{ embeddingStatus.message }}
       </p>
 
-      <div v-if="embeddingStatus.state !== 'error'" class="mx-auto mt-5 max-w-md text-left">
-        <div v-if="embeddingStatus.progressVisible" class="mb-2 flex justify-end text-xs font-medium text-base-content/65">
-          {{ embeddingStatus.progress }}%
+      <div v-if="embeddingStatus.state !== 'error'" class="mx-auto mt-6 max-w-md rounded-2xl border border-base-300 bg-base-200/70 p-4 text-left sm:p-5">
+        <div class="mb-2.5 flex items-center justify-between gap-3">
+          <span class="text-xs font-semibold text-base-content/70">
+            {{ embeddingStatus.progressVisible ? "ความคืบหน้าการดาวน์โหลด" : "กำลังเตรียมระบบ" }}
+          </span>
+          <span
+            v-if="embeddingStatus.progressVisible"
+            class="rounded-lg bg-primary/10 px-2.5 py-1 text-sm font-bold tabular-nums text-primary"
+          >
+            {{ embeddingStatus.progress }}%
+          </span>
+          <span v-else class="text-xs font-medium text-base-content/55">โปรดรอสักครู่</span>
         </div>
         <div
-          class="h-2 overflow-hidden rounded-full bg-base-300"
+          class="h-2.5 overflow-hidden rounded-full bg-base-300"
           role="progressbar"
           :aria-valuenow="embeddingStatus.progressVisible ? embeddingStatus.progress : undefined"
           :aria-valuemin="embeddingStatus.progressVisible ? 0 : undefined"

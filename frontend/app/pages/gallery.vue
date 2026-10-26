@@ -77,7 +77,7 @@
           :class="{ 'tag-cloud-chip-selected': selectedTag === tag.name }"
           type="button"
           :aria-pressed="selectedTag === tag.name"
-          :style="{ fontSize: `${tagFontSize(tag.photoCount)}px` }"
+          :style="{ ...tagColorStyle(tag.name), fontSize: `${tagFontSize(tag.photoCount)}px` }"
           :title="`แสดงรูป ${tag.photoCount} รูปที่มีแท็ก ${tag.name}`"
           @click="toggleSelectedTag(tag.name)"
         >
@@ -159,11 +159,22 @@
             <span v-for="tag in photo.tags" :key="tag" class="photo-tag">{{ tag }}</span>
           </div>
           <p class="file-state" :class="{ 'file-missing': photo.status !== 'active' }">
+            <span class="file-state-dot" aria-hidden="true" />
             {{ photo.status === "active" ? "ไฟล์พร้อมใช้งาน" : "ไม่พบไฟล์ในโฟลเดอร์" }}
           </p>
           <div class="photo-actions">
-            <button type="button" class="btn btn-xs btn-ghost text-error" :disabled="loading || deletingPhotoID !== null || deletingAllPhotos" @click="openDeleteDialog(photo)">
-              {{ deletingPhotoID === photo.id ? "กำลังลบ..." : "ลบ" }}
+            <button
+              type="button"
+              class="photo-delete-button"
+              :aria-label="deletingPhotoID === photo.id ? `กำลังลบ ${photo.filename}` : `ลบรูป ${photo.filename}`"
+              :disabled="loading || deletingPhotoID !== null || deletingAllPhotos"
+              @click="openDeleteDialog(photo)"
+            >
+              <svg v-if="deletingPhotoID !== photo.id" viewBox="0 0 24 24" fill="none" aria-hidden="true" class="size-4">
+                <path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span v-else class="loading loading-spinner loading-xs" aria-hidden="true" />
+              {{ deletingPhotoID === photo.id ? "กำลังลบ" : "ลบรูป" }}
             </button>
           </div>
         </div>
@@ -221,7 +232,7 @@
 
     <aside
       v-if="embeddingProgress.isRunning && embeddingProgress.total > 0"
-      class="fixed bottom-3 right-3 z-40 w-[min(25rem,calc(100%-1.5rem))] rounded-lg border border-neutral-content/10 bg-neutral px-3 py-2 text-neutral-content shadow-lg sm:bottom-4 sm:right-4"
+      class="fixed bottom-3 right-3 z-40 w-[min(25rem,calc(100%-1.5rem))] rounded-xl border border-base-300 bg-base-100 px-3 py-2 text-base-content shadow-lg sm:bottom-4 sm:right-4"
       role="status"
       aria-live="polite"
       aria-label="ความคืบหน้าการสร้าง Embedding"
@@ -230,21 +241,21 @@
         <div class="min-w-0 flex-1">
           <div class="mb-1 flex items-center justify-between gap-2 text-xs">
             <span class="truncate font-semibold">วิเคราะห์รูป · {{ embeddingProgress.finished }}/{{ embeddingProgress.total }}</span>
-            <span class="shrink-0 text-[11px] text-neutral-content/65">{{ embeddingProgress.percent }}%</span>
+            <span class="shrink-0 text-[11px] text-base-content/60">{{ embeddingProgress.percent }}%</span>
           </div>
           <progress
-            class="progress progress-success h-1.5 w-full bg-neutral-content/15"
+            class="progress progress-success h-1.5 w-full bg-base-300"
             :value="embeddingProgress.finished"
             :max="embeddingProgress.total"
             :aria-label="`เสร็จแล้ว ${embeddingProgress.finished} จาก ${embeddingProgress.total} รูป`"
           ></progress>
-          <p class="mt-1 text-[10px] leading-tight text-neutral-content/70">
+          <p class="mt-1 text-[10px] leading-tight text-base-content/65">
             ค้นหาได้ {{ readyPhotos.length }} · รอ {{ pendingPhotoCount }}<span v-if="processingPhotoCount"> · ทำ {{ processingPhotoCount }}</span><span v-if="failedPhotoCount"> · พลาด {{ failedPhotoCount }}</span>
           </p>
         </div>
         <button
           type="button"
-          class="btn btn-xs h-7 min-h-7 shrink-0 border-neutral-content/20 bg-transparent px-2 text-[11px] text-neutral-content hover:bg-neutral-content/10"
+          class="btn btn-xs h-7 min-h-7 shrink-0 border-base-300 bg-transparent px-2 text-[11px] text-base-content hover:bg-base-200"
           :disabled="queueActionPending"
           @click="toggleEmbeddingQueue"
         >
@@ -369,8 +380,27 @@ const tagCountRange = computed(() => ({
 }));
 function tagFontSize(count: number) {
   const { min, max } = tagCountRange.value;
-  if (!Number.isFinite(min) || max <= min) return 14;
+  if (!Number.isFinite(min) || max <= min) return 16;
+  // Larger tag counts get a clearly larger label, capped to keep the cloud balanced.
   return Math.round(13 + ((count - min) / (max - min)) * 9);
+}
+const tagColors = [
+  "#176b5b", // teal
+  "#a34f32", // terracotta
+  "#365a8c", // blue
+  "#7b4e83", // plum
+  "#64712c", // olive
+  "#226a83", // ocean
+  "#a54159", // berry
+  "#8a5a12", // amber
+];
+function tagColorStyle(name: string) {
+  // Keep each tag's color stable between refreshes without storing presentation data.
+  let hash = 0;
+  for (const character of name) {
+    hash = (hash * 31 + character.codePointAt(0)!) >>> 0;
+  }
+  return { "--tag-accent": tagColors[hash % tagColors.length] };
 }
 const waitingPhotos = computed(() =>
   photos.value.filter((photo) => photo.analysisStatus === "pending" || photo.analysisStatus === "processing"),
@@ -754,27 +784,34 @@ onBeforeUnmount(() => {
 .tag-cloud-list {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   gap: 9px 11px;
   margin-top: 14px;
 }
 .tag-cloud-chip {
   display: inline-flex;
-  min-height: 36px;
-  align-items: baseline;
-  gap: 6px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  height: 40px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--tag-accent) 30%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-primary) 9%, transparent);
-  padding: 5px 10px;
-  color: var(--color-base-content);
-  line-height: 1.2;
+  background: color-mix(in srgb, var(--tag-accent) 8%, var(--color-base-100));
+  padding: 0 13px;
+  color: var(--tag-accent);
+  font-weight: 550;
+  line-height: 1;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
 }
-.tag-cloud-chip:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 62%, transparent);
-  background: color-mix(in srgb, var(--color-primary) 18%, transparent);
+.tag-cloud-chip:hover:not(.tag-cloud-chip-selected) {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--tag-accent) 48%, var(--color-base-300));
+  background: color-mix(in srgb, var(--tag-accent) 12%, var(--color-base-100));
+  color: var(--tag-accent);
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--tag-accent) 12%, transparent);
 }
 .tag-cloud-chip:focus-visible,
 .tag-filter-clear:focus-visible {
@@ -786,9 +823,17 @@ onBeforeUnmount(() => {
   background: var(--color-primary);
   color: var(--color-primary-content);
 }
+.tag-cloud-chip-selected:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--color-primary) 82%, #000);
+  background: color-mix(in srgb, var(--color-primary) 88%, #000);
+  color: var(--color-primary-content);
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--color-primary) 22%, transparent);
+}
 .tag-cloud-chip-selected span {
   color: inherit;
   opacity: 0.8;
+  background: rgb(255 255 255 / 16%);
 }
 .tag-filter-clear {
   color: var(--color-primary);
@@ -798,9 +843,18 @@ onBeforeUnmount(() => {
   text-underline-offset: 3px;
 }
 .tag-cloud-chip span {
-  color: var(--color-primary);
+  display: inline-flex;
+  min-width: 18px;
+  height: 18px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tag-accent) 13%, var(--color-base-100));
+  color: var(--tag-accent);
   font-size: 0.68rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
 }
 .tag-cloud-empty { margin-top: 14px; }
 
@@ -820,15 +874,15 @@ onBeforeUnmount(() => {
   gap: 13px;
   border: 1px solid var(--color-base-300);
   border-radius: 13px;
-  background: #2d2e32;
+  background: var(--color-base-100);
   padding: 4px 7px 4px 15px;
   transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
 }
 
 .search-shell:focus-within {
-  border-color: #1687f8;
-  box-shadow: 0 0 0 1px #1687f8, 0 0 0 3px rgb(22 135 248 / 18%);
-  background: #303136;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary), 0 0 0 3px color-mix(in srgb, var(--color-primary) 18%, transparent);
+  background: var(--color-base-100);
 }
 
 .search-icon {
@@ -908,41 +962,60 @@ onBeforeUnmount(() => {
 
 .filter-chip {
   display: inline-flex;
-  min-height: 34px;
+  min-height: 40px;
   align-items: center;
-  gap: 7px;
-  border: 1px solid transparent;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--color-base-300);
   border-radius: 999px;
-  background: #34363a;
-  padding: 0 12px;
-  color: #e4e4e6;
+  background: var(--color-base-100);
+  padding: 0 14px;
+  color: var(--color-base-content);
   font-size: 0.8125rem;
-  font-weight: 600;
+  font-weight: 550;
   cursor: pointer;
-  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .filter-chip:hover {
-  background: #42444a;
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-base-300));
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-base-100));
 }
 
 .filter-chip span {
-  color: #b5b6bb;
+  display: inline-flex;
+  min-width: 22px;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-base-200);
+  padding: 0 6px;
+  color: color-mix(in srgb, var(--color-base-content) 75%, transparent);
+  font-size: 0.72rem;
+  font-weight: 650;
   font-variant-numeric: tabular-nums;
 }
 
 .filter-chip-active {
-  border-color: #1687f8;
-  background: #1687f8;
-  color: #fff;
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-primary-content);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--color-primary) 20%, transparent);
 }
 
 .filter-chip-active:hover {
-  background: #0879e8;
+  background: color-mix(in srgb, var(--color-primary) 88%, #000);
 }
 
 .filter-chip-active span {
-  color: rgb(255 255 255 / 85%);
+  background: rgb(255 255 255 / 17%);
+  color: var(--color-primary-content);
+}
+
+.filter-chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .search-status {
@@ -970,24 +1043,30 @@ onBeforeUnmount(() => {
 }
 
 .photo-tile {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #383a3f;
-  border-radius: 13px;
+  border: 1px solid color-mix(in srgb, var(--color-base-300) 88%, var(--color-base-content));
+  border-radius: 17px;
   background: var(--color-base-100);
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  box-shadow: 0 2px 8px rgb(91 64 48 / 4%);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
 }
 
 .photo-tile:hover {
-  border-color: #1687f8;
-  box-shadow: 0 8px 24px rgb(0 0 0 / 22%);
+  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-base-300));
+  box-shadow: 0 10px 24px rgb(91 64 48 / 11%);
+  transform: translateY(-2px);
 }
 
 .thumbnail-frame {
   position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
-  background: #1d1e21;
+  background: var(--color-base-200);
+  margin: 8px 8px 0;
+  border-radius: 11px;
 }
 
 .photo-open-trigger {
@@ -1005,7 +1084,7 @@ onBeforeUnmount(() => {
 
 .photo-open-trigger:focus-visible {
   z-index: 1;
-  outline: 3px solid #1687f8;
+  outline: 3px solid var(--color-primary);
   outline-offset: -3px;
 }
 
@@ -1029,37 +1108,41 @@ onBeforeUnmount(() => {
 
 .photo-status {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 7px;
+  bottom: 7px;
   max-width: calc(100% - 16px);
   overflow: hidden;
-  border: 1px solid rgb(22 24 28 / 12%);
+  border: 1px solid color-mix(in srgb, var(--color-success) 22%, transparent);
   border-radius: 999px;
   padding: 4px 9px;
-  background: rgb(240 245 250 / 94%);
-  color: #225d42;
+  background: color-mix(in srgb, var(--color-base-100) 94%, transparent);
+  color: var(--color-success);
   font-size: 0.7rem;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.status-complete {
-  color: #276749;
-}
+.status-complete { color: var(--color-success); }
 
 .photo-tile-body {
-  padding: 11px 12px 12px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 11px 13px 12px;
 }
 
 .photo-tile-body h2 {
+  display: -webkit-box;
+  min-height: 2.65em;
   overflow: hidden;
   color: var(--color-base-content);
   font-size: 0.875rem;
   font-weight: 700;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .photo-tag-list {
@@ -1080,21 +1163,69 @@ onBeforeUnmount(() => {
 }
 
 .file-state {
-  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
   color: color-mix(in srgb, var(--color-base-content) 72%, transparent);
-  font-size: 0.75rem;
+  font-size: 0.72rem;
+}
+
+.file-state-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-success);
 }
 
 .file-missing {
   color: var(--color-error);
 }
+.file-missing .file-state-dot { background: var(--color-error); }
 
 .photo-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 5px;
-  margin-top: 9px;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: auto;
+  border-top: 1px solid color-mix(in srgb, var(--color-base-300) 78%, transparent);
+  padding-top: 10px;
+}
+
+.photo-delete-button {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--color-error) 24%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--color-error) 6%, var(--color-base-100));
+  padding: 0 10px;
+  color: var(--color-error);
+  font-size: 0.75rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.photo-delete-button:hover:not(:disabled) {
+  border-color: var(--color-error);
+  background: var(--color-error);
+  color: var(--color-error-content);
+}
+
+.photo-delete-button:focus-visible {
+  outline: 2px solid var(--color-error);
+  outline-offset: 2px;
+}
+
+.photo-delete-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .gallery-message {
@@ -1104,7 +1235,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  border: 1px dashed #45474d;
+  border: 1px dashed color-mix(in srgb, var(--color-base-content) 25%, var(--color-base-300));
   border-radius: 14px;
   padding: 24px;
   color: color-mix(in srgb, var(--color-base-content) 82%, transparent);
@@ -1128,11 +1259,11 @@ onBeforeUnmount(() => {
   height: 72px;
   place-items: center;
   margin-bottom: 4px;
-  border: 1px solid #46484d;
+  border: 1px solid var(--color-base-300);
   border-radius: 21px;
-  background: #292a2e;
+  background: var(--color-base-100);
   color: var(--color-accent);
-  box-shadow: 0 10px 40px rgb(0 0 0 / 20%);
+  box-shadow: 0 10px 32px rgb(91 64 48 / 10%);
 }
 
 .status-list {
@@ -1159,8 +1290,8 @@ onBeforeUnmount(() => {
   border-radius: 50%;
 }
 
-.status-dot-waiting { background: #e9a34b; }
-.status-dot-failed { background: #ee7777; }
+.status-dot-waiting { background: var(--color-warning); }
+.status-dot-failed { background: var(--color-error); }
 
 .error-message {
   border-color: color-mix(in srgb, var(--color-error) 48%, transparent);
@@ -1168,7 +1299,7 @@ onBeforeUnmount(() => {
 }
 
 .photo-details-dialog::backdrop {
-  background: rgb(0 0 0 / 62%);
+  background: rgb(38 29 23 / 48%);
 }
 
 .photo-details-box {
@@ -1176,12 +1307,12 @@ onBeforeUnmount(() => {
   max-width: 720px;
   max-height: 92vh;
   overflow-y: auto;
-  border: 1px solid #45474d;
+  border: 1px solid var(--color-base-300);
   border-radius: 16px;
-  background: #252629;
+  background: var(--color-base-100);
   padding: 0;
-  color: #f1f1f2;
-  box-shadow: 0 24px 90px rgb(0 0 0 / 48%);
+  color: var(--color-base-content);
+  box-shadow: 0 24px 90px rgb(38 29 23 / 28%);
 }
 
 .photo-details-header {
@@ -1199,7 +1330,7 @@ onBeforeUnmount(() => {
   max-height: 56vh;
   place-items: center;
   overflow: hidden;
-  background: #191a1c;
+  background: var(--color-base-200);
 }
 
 .photo-details-preview img {
