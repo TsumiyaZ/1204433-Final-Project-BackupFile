@@ -49,3 +49,12 @@ jobs:
 
       - name: Build Wails application
         run: wails build -platform ${{ matrix.platform }}
+
+      - name: Upload macOS app
+        if: matrix.platform == 'darwin/universal'
+        uses: actions/upload-artifact@v4
+        with:
+          name: PhotoBackup-macOS-universal
+          path: build/bin/*.app
+          if-no-files-found: error
+          retention-days: 7
