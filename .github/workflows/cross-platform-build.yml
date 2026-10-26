@@ -44,11 +44,11 @@ jobs:
         shell: bash
         run: echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Run Go tests
-        run: go test ./...
-
       - name: Build Wails application
         run: wails build -platform ${{ matrix.platform }}
+
+      - name: Run Go tests
+        run: go test ./...
 
       - name: Upload macOS app
         if: matrix.platform == 'darwin/universal'
